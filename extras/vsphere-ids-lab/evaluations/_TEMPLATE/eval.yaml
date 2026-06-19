@@ -1,0 +1,14 @@
+# Machine-readable eval definition. Copy the _TEMPLATE folder to evaluations/<slug>/.
+slug: CHANGE-ME
+category: IDS            # IDS|EDR|VulnScanner|SIEM|WAF|SAST|...
+products:
+  - name: product-a
+    version: ""
+    license: ""         # record license + any benchmark clause (see SAFETY.md)
+  - name: product-b
+    version: ""
+    license: ""
+targets: [juiceshop, dvwa]
+scenario: web-recon-v1   # references attack-range/scenarios/<id>.yml
+runs: 3                   # repeat for variance
+pass_criteria: "define what 'detection/success' means for this category"

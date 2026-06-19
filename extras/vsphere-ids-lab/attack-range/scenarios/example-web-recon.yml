@@ -1,0 +1,22 @@
+# Example scenario: web recon + common web attacks against Juice Shop / DVWA.
+# Keep scenarios deterministic so results are comparable across products.
+id: web-recon-v1
+description: Port scan + directory brute + SQLi/XSS probes against web targets
+targets:
+  - name: juiceshop
+    host: ${TARGET_JUICESHOP:-10.10.10.20}
+    port: 3000
+  - name: dvwa
+    host: ${TARGET_DVWA:-10.10.10.20}
+    port: 8080
+steps:
+  - name: discovery
+    tool: nmap
+    args: "-sV -p- {host}"
+  - name: dir-brute
+    tool: ffuf
+    args: "-u http://{host}:{port}/FUZZ -w /wordlists/common.txt"
+  - name: web-attacks
+    tool: nuclei
+    args: "-u http://{host}:{port} -tags sqli,xss,lfi"
+expected_signal: "IDS/WAF should alert on scan + web attack signatures"

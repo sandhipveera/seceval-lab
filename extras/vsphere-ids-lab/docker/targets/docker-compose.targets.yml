@@ -1,0 +1,28 @@
+# Vulnerable target boxes for the attack range.
+# Runs on the ISOLATED attack segment ONLY. Never expose these ports to a real network.
+name: seceval-targets
+networks:
+  attack:
+    name: seceval-attack
+    driver: bridge
+services:
+  juiceshop:
+    image: bkimminich/juice-shop:latest
+    container_name: tgt-juiceshop
+    networks: [attack]
+    ports: ["3000:3000"]
+    restart: unless-stopped
+
+  dvwa:
+    image: vulnerables/web-dvwa:latest
+    container_name: tgt-dvwa
+    networks: [attack]
+    ports: ["8080:80"]
+    restart: unless-stopped
+
+  # Metasploitable-style services. Pin a known image you trust; isolated network only.
+  vuln-services:
+    image: tleemcjr/metasploitable2:latest
+    container_name: tgt-metasploitable
+    networks: [attack]
+    restart: unless-stopped

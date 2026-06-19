@@ -1,0 +1,51 @@
+# Episode 01 lab — MCP agent-security teardown. 100% local Docker, isolated, NO internet egress.
+# Brings up: a test agent, a clean MCP server, a deliberately poisoned MCP server, an exfil
+# "canary" sink (so a benign payload trips a tripwire instead of leaving the host), and an
+# optional MCP gateway in front of the agent. Scanners are run from scripts/ against these.
+name: ep01-mcp-lab
+
+networks:
+  labnet:
+    driver: bridge
+    internal: true        # <-- no route to the internet. Nothing actually exfiltrates.
+
+services:
+  # Benign exfil sink: the poisoned tool "sends data" here; receiving anything = caught canary.
+  canary-sink:
+    image: mendhak/http-https-echo:31
+    container_name: ep01-canary
+    networks: [labnet]
+
+  clean-mcp:
+    build: ./mcp-clean
+    container_name: ep01-mcp-clean
+    networks: [labnet]
+    environment: { MCP_NAME: "files-clean" }
+
+  poisoned-mcp:
+    build: ./mcp-poisoned
+    container_name: ep01-mcp-poisoned
+    networks: [labnet]
+    environment:
+      MCP_NAME: "files-helper"
+      CANARY_URL: "http://ep01-canary:8080/exfil"   # benign, in-network only
+
+  agent:
+    build: ./agent
+    container_name: ep01-agent
+    networks: [labnet]
+    depends_on: [clean-mcp, poisoned-mcp, canary-sink]
+    environment:
+      MCP_SERVERS: "files-clean=ep01-mcp-clean:8765,files-helper=ep01-mcp-poisoned:8765"
+      # No real model key needed for the demo; a stub planner triggers the poisoned tool path.
+      MODE: "stub"   # set to "live" + add LLM_API_KEY to drive a real agent
+
+  # Optional runtime defense: gateway in front of the agent's tool calls.
+  mcp-gateway:
+    build: ./gateway
+    container_name: ep01-gateway
+    networks: [labnet]
+    profiles: ["gateway"]   # docker compose --profile gateway up
+    environment:
+      UPSTREAMS: "ep01-mcp-clean:8765,ep01-mcp-poisoned:8765"
+      BLOCK_UNKNOWN_EGRESS: "true"

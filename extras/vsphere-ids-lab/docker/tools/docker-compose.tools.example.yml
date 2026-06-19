@@ -1,0 +1,28 @@
+# EXAMPLE product-under-test stack. Copy per evaluation into the eval folder and edit.
+# This example shows an IDS (Suricata) sniffing the attack bridge + a viewer.
+name: seceval-tools
+networks:
+  attack:
+    external: true
+    name: seceval-attack
+services:
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: tool-suricata
+    network_mode: host          # needs to sniff the host's attack interface
+    cap_add: [NET_ADMIN, SYS_NICE]
+    command: ["-i", "${SNIFF_IFACE:-eth1}"]
+    volumes:
+      - ./suricata/rules:/var/lib/suricata/rules
+      - ./artifacts/suricata:/var/log/suricata
+    restart: unless-stopped
+
+  evebox:
+    image: jasonish/evebox:latest
+    container_name: tool-evebox
+    networks: [attack]
+    ports: ["5636:5636"]
+    command: ["evebox", "oneshot", "/var/log/suricata/eve.json"]
+    volumes:
+      - ./artifacts/suricata:/var/log/suricata
+    depends_on: [suricata]

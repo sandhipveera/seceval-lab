@@ -1,0 +1,9 @@
+variable "name"          { type = string }
+variable "resource_pool" { type = string }
+variable "datastore"     { type = string }
+variable "template"      { type = any }
+variable "networks"      { type = list(string) }
+variable "num_cpus"      { type = number }
+variable "memory"        { type = number }
+variable "disk_gb"       { type = number }
+variable "ssh_key"       { type = string }

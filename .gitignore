@@ -1,0 +1,26 @@
+# Secrets
+video/.env
+*.key
+*.pem
+
+# Video build output
+video/build/
+video/node_modules/
+*.mp3
+*.webm
+*.cast
+
+# Lab run artifacts (keep curated ones; ignore raw bulk)
+episodes/*/lab/artifacts/*
+!episodes/*/lab/artifacts/.gitkeep
+
+# Python / OS / editor
+__pycache__/
+*.pyc
+.DS_Store
+*.swp
+
+# Terraform (extras)
+extras/**/terraform/.terraform/
+extras/**/*.tfstate*
+extras/**/terraform.tfvars

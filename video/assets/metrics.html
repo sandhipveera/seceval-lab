@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  html,body{margin:0;height:100%;background:#0b0f14;color:#e8eef5;overflow:hidden;
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .kicker{letter-spacing:.3em;font-size:16px;color:#5ad1a8;text-transform:uppercase;margin-bottom:8px}
+  h1{font-size:46px;margin:0 0 8px}
+  .note{font-size:16px;color:#7d8ea1;margin-bottom:28px}
+  .grid{display:flex;gap:60px}
+  .panel{width:620px;height:520px;background:#121a24;border:1px solid #26384a;border-radius:18px;
+    padding:24px 28px;box-sizing:border-box}
+  .panel h2{font-size:24px;margin:0 0 14px;color:#c4d2e0;font-weight:600}
+</style></head><body><div class="wrap">
+  <div class="kicker">Round 3 · Signal &amp; cost</div>
+  <h1>Noise vs. resource cost under the same load</h1>
+  <div class="note">⚠ SAMPLE DATA — replace DATA below with your eval's artifacts/&lt;run&gt;/metrics.csv before publishing</div>
+  <div class="grid">
+    <div class="panel"><h2>False positives (lower is better)</h2><canvas id="fp"></canvas></div>
+    <div class="panel"><h2>Resource cost under load</h2><canvas id="res"></canvas></div>
+  </div>
+</div>
+<script>
+/* EDIT ME: pull these from artifacts/<run>/metrics.csv + normalized alert CSV. */
+const DATA = {
+  products: ["Snort", "Suricata", "Zeek"],
+  falsePositives: [9, 24, 2],
+  peakCpuPct:     [22, 38, 31],
+  peakMemMB:      [180, 410, 360]
+};
+const COLORS = ["#ff7a59", "#5ad1a8", "#6aa6ff"];
+const gridC = "#26384a", tickC = "#9fb0c3";
+Chart.defaults.color = tickC; Chart.defaults.font.size = 16;
+
+new Chart(document.getElementById("fp"), {
+  type: "bar",
+  data: { labels: DATA.products,
+    datasets: [{ data: DATA.falsePositives, backgroundColor: COLORS, borderRadius: 8 }] },
+  options: { plugins:{legend:{display:false}}, scales:{
+    y:{beginAtZero:true,grid:{color:gridC}}, x:{grid:{display:false}} } }
+});
+
+new Chart(document.getElementById("res"), {
+  type: "bar",
+  data: { labels: DATA.products, datasets: [
+    { label:"Peak CPU %", data: DATA.peakCpuPct, backgroundColor:"#5ad1a8", borderRadius:6 },
+    { label:"Peak MEM (×10 MB)", data: DATA.peakMemMB.map(m=>m/10), backgroundColor:"#6aa6ff", borderRadius:6 }
+  ]},
+  options: { plugins:{legend:{labels:{boxWidth:14}}}, scales:{
+    y:{beginAtZero:true,grid:{color:gridC}}, x:{grid:{display:false}} } }
+});
+</script>
+</body></html>

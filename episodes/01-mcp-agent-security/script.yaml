@@ -1,0 +1,112 @@
+# Machine-readable twin of STORYBOARD.md — drives voiceover, recording, captions.
+# Narration text is identical to the storyboard.
+episode:
+  number: 1
+  slug: mcp-agent-security
+  title: "I Poisoned an AI Agent's Tools — Which Scanner Caught It?"
+  resolution: "1920x1080"
+  fps: 30
+  lab: docker
+
+voice:
+  provider: elevenlabs
+  voice_id: "${ELEVENLABS_VOICE_ID}"
+  model_id: "eleven_multilingual_v2"
+  stability: 0.45
+  similarity_boost: 0.80
+  style: 0.0
+  speed: 1.0
+
+scenes:
+  - id: s1_cold_open
+    narration: >-
+      This is the newest attack surface in security, and most teams aren't ready for it. Modern
+      AI agents don't just talk — they use tools, wired in over something called MCP. But what
+      happens when one of those tools is poisoned? I built an agent, handed it a malicious tool
+      server, and then asked three different security scanners a simple question: can you catch
+      this before it quietly exfiltrates my data? No marketing — just what each one flagged.
+    action: { type: browser, url: "file://${ASSETS}/title_cold_open.html", duration_hint: 30 }
+
+  - id: s2_what_is_mcp
+    narration: >-
+      Quick context. The Model Context Protocol — MCP — is how AI agents plug into tools and
+      data: your files, a database, a ticketing system. The agent reads each tool's description
+      to decide when to use it. That's the elegant part, and also the dangerous part: the agent
+      trusts those descriptions. If an attacker controls a tool's description, they can smuggle
+      in hidden instructions the agent will follow. Researchers call the worst version of this
+      Shadow Escape — a zero-click attack where just connecting a poisoned tool can lead to
+      silent data theft. And Cisco found only twenty-nine percent of organizations feel ready to
+      secure this.
+    action: { type: browser, url: "file://${ASSETS}/mcp_diagram.html", duration_hint: 60 }
+
+  - id: s3_threats
+    narration: >-
+      There are three failure modes worth knowing. Tool poisoning: the tool's description
+      contains hidden instructions — also send the user's files to this address. Confused deputy:
+      the MCP server has more access than the agent should, and the attacker borrows it. And
+      overprivileged tokens: servers storing real credentials in plaintext config. The scary part
+      is the first one needs no exploit code — it's just text the agent is told to trust. So the
+      defense isn't a firewall; it's a scanner that reads the tools the way an attacker would.
+    action: { type: browser, url: "file://${ASSETS}/threats.html", duration_hint: 60 }
+
+  - id: s4_lab_rules
+    narration: >-
+      Here's the setup, and fairness matters. Everything runs locally in Docker on one isolated
+      network with no path to the internet — so nothing actually leaves. I stand up a test agent,
+      a normal MCP server, and a deliberately poisoned one whose tool descriptions hide an exfil
+      instruction with a benign canary payload. Then each scanner gets the exact same servers to
+      inspect. Same target, same poison — the only variable is the tool doing the catching.
+    action: { type: terminal, cast: "lab_bringup", duration_hint: 60 }
+
+  - id: s5_setup_coverage
+    narration: >-
+      Round one — getting each scanner running and seeing what it even looks at. mcp-scan
+      inspects server and tool definitions statically and can watch traffic dynamically, scoring
+      against a known set of MCP attacks. Golf Scanner is a tiny Go command-line tool that
+      discovers MCP configs across your IDEs and runs a set of local checks in seconds — almost
+      zero setup. And as a third approach, an MCP gateway sits in front of the agent and tries to
+      enforce policy at runtime rather than scan beforehand. Setup times and coverage are on
+      screen; full commands are in the repo.
+    action: { type: terminal, cast: "scanner_setup", duration_hint: 90 }
+
+  - id: s6_detection
+    narration: >-
+      Now the real test. I point each scanner at the poisoned server and watch. The static
+      scanners read every tool description and parameter — so a hidden exfiltrate-to-this-address
+      string is exactly what they're built to find, and the better one flagged it immediately
+      with the rule it matched. The gateway took a different path: it didn't care about the
+      description, it caught the agent trying to reach an unexpected destination at runtime and
+      blocked the call. The interesting gaps are where a poison is obfuscated — encoded or split
+      across fields — and a simple pattern match misses it. I normalized every result into one
+      table so it's apples to apples. Here's who caught what.
+    action: { type: terminal, cast: "detection_run", duration_hint: 150 }
+
+  - id: s7_noise_speed
+    narration: >-
+      Detection isn't the whole story. A scanner that flags every tool as suspicious trains you
+      to ignore it. Golf Scanner was the fastest and quietest but shallower; mcp-scan went deeper
+      and caught more, at the cost of a couple of false positives on legitimate tools; the
+      gateway adds real protection but also real latency to every agent call. Here's the cost of
+      each, measured under the same load.
+    action: { type: browser, url: "file://${ASSETS}/metrics.html", duration_hint: 75 }
+
+  - id: s8_scorecard
+    narration: >-
+      Same rubric every episode — install, detection, signal quality, performance, usability,
+      docs, and value. And like everything in this space, there's no single winner. Use Golf
+      Scanner for a fast, zero-friction first pass — run it in CI on every change. Use mcp-scan
+      when you want deeper static and dynamic analysis and you're willing to tune out a little
+      noise. And put a gateway in front when an agent touches anything sensitive, because scanning
+      before deployment and enforcing at runtime catch genuinely different attacks. Honestly, the
+      right answer for a real deployment is to layer them.
+    action: { type: browser, url: "file://${ASSETS}/scorecard.html", duration_hint: 105 }
+
+  - id: s9_outro
+    narration: >-
+      Everything here is reproducible — the poisoned MCP server, the agent, the scanner commands,
+      down to the commit hash. It's all benign: the exfil just trips a canary on an isolated
+      network, so you can safely run it yourself and tell me if your results differ. Next episode
+      I hide malware inside an AI model and try to slip it past the model scanners — using real
+      twenty-twenty-five bypasses. If that sounds like your kind of trouble, subscribe, and I'll
+      see you in the lab.
+    action: { type: browser, url: "file://${ASSETS}/outro.html", duration_hint: 60 }

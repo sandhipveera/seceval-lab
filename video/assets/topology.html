@@ -1,0 +1,66 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;height:100%;background:#0b0f14;color:#e8eef5;overflow:hidden;
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .kicker{letter-spacing:.3em;font-size:16px;color:#5ad1a8;text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:48px;margin:0 0 36px}
+  svg{width:1500px;height:620px}
+  .box{fill:#121a24;stroke:#26384a;stroke-width:2;rx:14}
+  .lbl{fill:#e8eef5;font-size:22px;font-weight:600}
+  .sub{fill:#9fb0c3;font-size:16px}
+  .seg{fill:#0e1620;stroke:#26384a;stroke-width:2;stroke-dasharray:8 6}
+  .segname{fill:#7fe3c0;font-size:18px;font-weight:700;letter-spacing:.12em}
+  .ids{fill:#13251f;stroke:#5ad1a8;stroke-width:2.5}
+  .idslbl{fill:#7fe3c0;font-size:20px;font-weight:700}
+  .wire{stroke:#3a5267;stroke-width:3}
+  .wire.attack{stroke:#e0603a;stroke-dasharray:2 8;stroke-width:3}
+  .pill{fill:#1c1410;stroke:#e0603a;stroke-width:1.5}
+  .pilltext{fill:#f0a07f;font-size:15px;font-weight:600}
+  .tap{fill:#e0603a;font-size:15px}
+</style></head><body><div class="wrap">
+  <div class="kicker">The Lab · One isolated host</div>
+  <h1>Same wire, same target — only the IDS changes</h1>
+  <svg viewBox="0 0 1500 620">
+    <!-- vSphere host frame -->
+    <rect x="20" y="20" width="1460" height="580" rx="16" fill="none" stroke="#26384a" stroke-width="2"/>
+    <text x="44" y="56" class="sub">VMware vSphere / ESXi host</text>
+
+    <!-- mgmt segment -->
+    <rect class="seg" x="60" y="90" width="600" height="180" rx="12"/>
+    <text x="80" y="120" class="segname">PG: lab-mgmt (routable)</text>
+    <rect class="box" x="100" y="140" width="240" height="100" rx="14"/>
+    <text x="120" y="180" class="lbl">controller</text>
+    <text x="120" y="208" class="sub">Docker host · runs the IDS</text>
+
+    <!-- IDS sitting on the wire -->
+    <rect class="ids" x="400" y="150" width="220" height="80" rx="12"/>
+    <text x="430" y="185" class="idslbl">IDS under test</text>
+    <text x="430" y="212" class="sub" fill="#9fb0c3">Suricata / Zeek / Snort</text>
+
+    <!-- attack segment (isolated) -->
+    <rect class="seg" x="60" y="320" width="1380" height="240" rx="12" stroke="#e0603a"/>
+    <text x="80" y="352" class="segname" fill="#f0a07f">PG: lab-attack — ISOLATED, NO UPLINK</text>
+
+    <rect class="box" x="120" y="390" width="300" height="120" rx="14"/>
+    <text x="140" y="432" class="lbl">attack-range</text>
+    <text x="140" y="462" class="sub">nmap · ffuf · nuclei</text>
+
+    <rect class="box" x="980" y="390" width="360" height="120" rx="14"/>
+    <text x="1000" y="432" class="lbl">targets</text>
+    <text x="1000" y="462" class="sub">OWASP Juice Shop · DVWA</text>
+
+    <!-- wires -->
+    <line class="wire" x1="340" y1="190" x2="400" y2="190"/>
+    <line class="wire" x1="620" y1="190" x2="700" y2="190"/>
+    <line class="wire attack" x1="420" y1="450" x2="980" y2="450"/>
+    <text x="640" y="438" class="tap">attack traffic →</text>
+
+    <!-- IDS tap line down to attack wire -->
+    <line class="wire attack" x1="510" y1="230" x2="510" y2="450"/>
+    <text x="525" y="330" class="tap">mirror / tap</text>
+
+    <!-- no-internet pill -->
+    <rect class="pill" x="1120" y="330" width="300" height="44" rx="22"/>
+    <text x="1140" y="358" class="pilltext">⛔ no route to LAN / internet</text>
+  </svg>
+</div></body></html>

@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  html,body{margin:0;height:100%;background:#0b0f14;color:#e8eef5;overflow:hidden;
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .kicker{letter-spacing:.3em;font-size:16px;color:#5ad1a8;text-transform:uppercase;margin-bottom:8px}
+  h1{font-size:46px;margin:0 0 6px}
+  .note{font-size:16px;color:#7d8ea1;margin-bottom:26px}
+  .row{display:flex;gap:60px;align-items:center}
+  .radar{width:660px;height:560px;background:#121a24;border:1px solid #26384a;border-radius:18px;padding:22px}
+  .totals{display:flex;flex-direction:column;gap:22px}
+  .tcard{width:420px;background:#121a24;border:1px solid #26384a;border-radius:16px;padding:22px 28px;
+    display:flex;justify-content:space-between;align-items:center}
+  .tcard .n{font-size:30px;font-weight:800}
+  .tcard .s{font-size:44px;font-weight:800}
+  .b1{border-left:6px solid #ff7a59}.b2{border-left:6px solid #5ad1a8}.b3{border-left:6px solid #6aa6ff}
+</style></head><body><div class="wrap">
+  <div class="kicker">Scorecard · fixed rubric every episode</div>
+  <h1>Seven criteria, weighted — no single winner</h1>
+  <div class="note">⚠ SAMPLE SCORES — replace DATA with the filled scorecard from the eval README before publishing</div>
+  <div class="row">
+    <div class="radar"><canvas id="radar"></canvas></div>
+    <div class="totals">
+      <div class="tcard b1"><span class="n">Snort</span><span class="s" style="color:#ff7a59">3.9</span></div>
+      <div class="tcard b2"><span class="n">Suricata</span><span class="s" style="color:#5ad1a8">4.2</span></div>
+      <div class="tcard b3"><span class="n">Zeek</span><span class="s" style="color:#6aa6ff">3.8</span></div>
+    </div>
+  </div>
+</div>
+<script>
+/* EDIT ME: scores per docs/SCORECARD.md, pulled from the filled eval README. 1–5 each. */
+const DATA = {
+  criteria: ["Install","Detection","Signal quality","Performance","Usability","Docs","Value"],
+  Snort:    [3,4,4,4,2,4,5],
+  Suricata: [4,5,3,4,2,5,5],
+  Zeek:     [3,4,5,3,2,4,5]
+};
+const tickC="#9fb0c3", gridC="#26384a";
+Chart.defaults.color=tickC; Chart.defaults.font.size=15;
+const ds=(label,arr,color)=>({label,data:arr,borderColor:color,
+  backgroundColor:color+"22",borderWidth:2,pointBackgroundColor:color});
+new Chart(document.getElementById("radar"),{
+  type:"radar",
+  data:{labels:DATA.criteria,datasets:[
+    ds("Snort",DATA.Snort,"#ff7a59"),
+    ds("Suricata",DATA.Suricata,"#5ad1a8"),
+    ds("Zeek",DATA.Zeek,"#6aa6ff")
+  ]},
+  options:{scales:{r:{min:0,max:5,grid:{color:gridC},angleLines:{color:gridC},
+    pointLabels:{font:{size:16}},ticks:{display:false}}},
+    plugins:{legend:{labels:{boxWidth:14,font:{size:17}}}}}
+});
+</script>
+</body></html>

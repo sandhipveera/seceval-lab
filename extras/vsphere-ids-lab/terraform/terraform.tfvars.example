@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and fill in. NEVER commit the real tfvars (see .gitignore).
+vsphere_user     = "administrator@vsphere.local"
+vsphere_password = "CHANGE_ME"
+vsphere_server   = "vcenter.lab.local"   # or your ESXi host
+
+datacenter    = "Datacenter"
+cluster       = "Cluster"
+resource_pool = "Resources"
+datastore     = "datastore1"
+template_name = "ubuntu-2204-cloudinit-template"
+
+mgmt_network   = "lab-mgmt"     # routable
+attack_network = "lab-attack"   # ISOLATED, no uplink
+
+lab_prefix     = "seceval"
+ssh_public_key = "ssh-ed25519 AAAA... you@host"

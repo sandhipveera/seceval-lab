@@ -1,0 +1,104 @@
+# Structured episode script — single source for voiceover, recording, and captions.
+# Narration text mirrors evaluations/<slug>/STORYBOARD.md verbatim.
+# Each scene drives: ElevenLabs MP3 (narration) + a recording (action) + an SRT caption.
+episode:
+  slug: ids-suricata-vs-zeek-vs-snort
+  title: "Suricata vs Zeek vs Snort — 3 IDS, 1 Attack, Same Box"
+  resolution: "1920x1080"
+  fps: 30
+
+# Voice settings applied to every scene unless overridden.
+voice:
+  provider: elevenlabs
+  voice_id: "${ELEVENLABS_VOICE_ID}"   # YOUR cloned voice id — set in video/.env
+  model_id: "eleven_multilingual_v2"
+  stability: 0.45
+  similarity_boost: 0.80
+  style: 0.0
+  speed: 1.0
+
+scenes:
+  - id: s1_cold_open
+    narration: >-
+      An intrusion detection system has one job: notice when something on your network is
+      wrong. So I built an isolated lab, pointed the exact same attack at the exact same
+      target three times, and swapped only the IDS underneath. Suricata. Zeek. Snort.
+      Here's what each one actually saw — no marketing, just the logs.
+    action: { type: browser, url: "file://${ASSETS}/title_cold_open.html", duration_hint: 25 }
+
+  - id: s2_job_to_be_done
+    narration: >-
+      Quick framing. An IDS sits on your network and inspects traffic for known-bad patterns
+      or weird behavior. It doesn't block — it tells you. If you run a home lab, a small
+      business, or you're studying for a blue-team role, this is the tool that turns "I think
+      something's off" into an actual alert you can act on. The question is never just "does
+      it work" — it's "what does it miss, how noisy is it, and what does it cost you to run."
+    action: { type: browser, url: "file://${ASSETS}/topology.html", duration_hint: 45 }
+
+  - id: s3_why_three
+    narration: >-
+      I picked Suricata, Zeek, and Snort because they're the three you'll actually run into.
+      Snort is the original, signature-based and battle-tested. Suricata is the modern
+      multi-threaded successor with a rich event format. Zeek isn't really a signature engine
+      at all — it's a network analysis framework that describes everything it sees. Same
+      category, three very different philosophies. All free, all open source.
+    action: { type: browser, url: "file://${ASSETS}/contenders.html", duration_hint: 40 }
+
+  - id: s4_lab_rules
+    narration: >-
+      Here's the setup, and it matters for fairness. One vSphere host. An isolated network
+      with no path to the internet or my real LAN — everything stays in the lab. Two
+      deliberately vulnerable targets: OWASP Juice Shop and DVWA. And one fixed attack script.
+      Every IDS gets the same clean VM snapshot, the same target, the same attack. The only
+      variable is the tool.
+    action: { type: terminal, cast: "lab_bringup", duration_hint: 50 }
+
+  - id: s5_install
+    narration: >-
+      Round one — just getting each one running, fully scripted, timed with a stopwatch.
+      Suricata came up from a single compose file in a few minutes, but out of the box it's
+      quiet until you load rule sets. Snort took the most fiddling — the config is powerful
+      and also from another era. Zeek installed fast, but configuring it means thinking in its
+      scripting language, which is a different mental model entirely.
+    action: { type: terminal, cast: "install_all", duration_hint: 90 }
+
+  - id: s6_detection
+    narration: >-
+      Now the fun part. I fire the identical attack and watch what each one catches. Suricata
+      lit up immediately on the scan and the web exploits — clean, structured events I could
+      export straight to a table. Snort caught the signature-based hits but stayed silent on a
+      couple of things outside its rule set. Zeek didn't alert in the classic sense — it
+      quietly logged the entire conversation, which is incredible for forensics but means you
+      do more work to turn it into "something is wrong right now." I normalized everything into
+      one CSV so it's apples to apples — here's the tally.
+    action: { type: browser, url: "http://${CONTROLLER_IP}:5636", duration_hint: 140, script: evebox_walkthrough }
+
+  - id: s7_noise_cost
+    narration: >-
+      Detection is only half the story. An IDS that screams at everything is one you'll learn
+      to ignore. Untuned, Suricata's broad rule sets generated the most noise; Snort was
+      tighter out of the box; Zeek barely false-positives because it isn't trying to. And
+      resource cost — here's CPU and memory under the same load. Suricata's multithreading
+      earns its keep on busier links; Snort stayed lean; Zeek's cost scales with how much you
+      ask its scripts to do.
+    action: { type: browser, url: "file://${ASSETS}/metrics.html", duration_hint: 80 }
+
+  - id: s8_scorecard
+    narration: >-
+      Scored on the same rubric every episode — install, detection, signal quality,
+      performance, usability, docs, and value. There's no single winner, and anyone who tells
+      you otherwise is selling something. Pick Suricata if you want modern, exportable alerts
+      and you're willing to tune. Pick Snort if you want a proven signature engine and tight
+      defaults. Pick Zeek if your real goal is deep network visibility and forensics, not just
+      alerts. A lot of serious setups run Suricata or Snort for alerting and Zeek alongside
+      for context.
+    action: { type: browser, url: "file://${ASSETS}/scorecard.html", duration_hint: 100 }
+
+  - id: s9_outro
+    narration: >-
+      Everything here is reproducible — same repo, pinned versions, the exact attack script,
+      down to the commit hash on screen. Clone it, run it, and tell me if your numbers differ;
+      that's the whole point. Next episode I turn the same lab loose on vulnerability
+      scanners — OpenVAS versus Nuclei versus Trivy. If you want to see how that shakes out,
+      subscribe, and I'll see you in the lab.
+    action: { type: browser, url: "file://${ASSETS}/outro.html", duration_hint: 60 }
