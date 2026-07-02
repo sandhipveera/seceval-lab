@@ -2,8 +2,8 @@
 title: "I Hid Malware in an AI Model — Which Scanner Caught It?"
 description: "A reproducible, Docker-based teardown of AI model-file security. One benign-canary malicious model, four scanners — picklescan, ModelScan, ModelAudit, and fickling. What each caught, and what walked right past it."
 tags: [AI security, pickle, model scanner, supply chain, picklescan, ModelScan, ModelAudit, fickling, blue-team]
-status: draft
-note: "Detection/cost tables + scorecard + canary ground-truth all filled from the real lab run (artifacts/findings.csv, metrics.csv, run_canary_check.sh). Only remaining pre-publish item: set the pinned commit hash after the first git push (repo URL is already set to github.com/sandhipveera/seceval-lab)."
+status: ready
+note: "All numbers filled from the real lab run (findings.csv, metrics.csv, run_canary_check.sh); repo URL and pinned commit (465a22c) set. Publish-ready once the repo is pushed to github.com/sandhipveera/seceval-lab. If you re-commit after this edit, update the two `465a22c` references to the latest hash (or tag the commit, e.g. `git tag ep02`)."
 ---
 
 # I Hid Malware in an AI Model — Which Scanner Caught It?
@@ -22,8 +22,8 @@ the only question that matters — can you find what's hiding inside, even when 
 
 Everything below runs locally in Docker on an isolated network with no internet egress, the payload
 is a benign canary, and the whole setup is reproducible from
-[the repo](https://github.com/sandhipveera/seceval-lab) at a pinned commit. If your results differ from
-mine, that's the point — tell me.
+[the repo](https://github.com/sandhipveera/seceval-lab) at pinned commit `465a22c`. If your results
+differ from mine, that's the point — tell me.
 
 ## Why the model file itself became an attack surface
 
@@ -215,7 +215,7 @@ to update relentlessly, because this category's threat model shifts every few we
 ## Reproduce it yourself
 
 Every number above comes from the lab run, and the whole thing is reproducible from
-[the repo](https://github.com/sandhipveera/seceval-lab) at commit `[FILL]` — same malicious model file, same
+[the repo](https://github.com/sandhipveera/seceval-lab) at commit `465a22c` — same malicious model file, same
 evasive variants, same scanner commands. It's all benign: the payload trips a canary on an isolated
 network, so nothing leaves your machine and you can safely run it and see where your results diverge.
 
