@@ -1,0 +1,70 @@
+# Episode 02 lab — AI model-scanner bypass teardown. 100% local Docker, isolated, NO internet egress.
+# Brings up: a benign exfil "canary" sink (so the model-file payload trips a tripwire instead of
+# leaving the host), a model-file builder that generates one malicious model + evasive variants,
+# and four scanner containers under test (picklescan, ModelScan, ModelAudit, fickling). Scanners
+# are run from scripts/ against the same shared model files.
+name: ep02-model-scanner-lab
+
+networks:
+  labnet:
+    driver: bridge
+    internal: true        # <-- no route to the internet. The payload only ever hits the canary.
+
+volumes:
+  models:                 # shared model files: the base malicious model + evasive variants + clean set
+
+services:
+  # Benign canary sink: the model-file payload "phones home" here on load; a hit = code executed.
+  canary-sink:
+    image: mendhak/http-https-echo:31
+    container_name: ep02-canary
+    networks: [labnet]
+
+  # Builds ONE malicious model file (benign canary payload) plus evasive variants + a clean set.
+  model-builder:
+    build: ./model-builder
+    container_name: ep02-model-builder
+    networks: [labnet]
+    volumes: [ "models:/models" ]
+    environment:
+      CANARY_URL: "http://ep02-canary:8080/loaded"   # benign, in-network only
+      # Variants emitted into /models: plain, deep_import (blocklist evasion),
+      # renamed (.pkl content in a .bin extension), broken_archive (payload-then-break / non-zip).
+      VARIANTS: "plain,deep_import,renamed,broken_archive"
+
+  # --- Scanners under test. Each mounts the shared /models read-only and writes raw output. ---
+  picklescan:
+    build: ./scanner-picklescan
+    container_name: ep02-picklescan
+    networks: [labnet]
+    depends_on: [model-builder]
+    volumes:
+      - "models:/models:ro"
+      - "./artifacts:/artifacts"
+
+  modelscan:
+    build: ./scanner-modelscan
+    container_name: ep02-modelscan
+    networks: [labnet]
+    depends_on: [model-builder]
+    volumes:
+      - "models:/models:ro"
+      - "./artifacts:/artifacts"
+
+  modelaudit:
+    build: ./scanner-modelaudit
+    container_name: ep02-modelaudit
+    networks: [labnet]
+    depends_on: [model-builder]
+    volumes:
+      - "models:/models:ro"
+      - "./artifacts:/artifacts"
+
+  fickling:
+    build: ./scanner-fickling
+    container_name: ep02-fickling
+    networks: [labnet]
+    depends_on: [model-builder]
+    volumes:
+      - "models:/models:ro"
+      - "./artifacts:/artifacts"

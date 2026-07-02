@@ -1,0 +1,15 @@
+episode: 02
+slug: model-scanner-bypass
+title: "I Hid Malware in an AI Model — Which Scanner Caught It?"
+status: new            # new | in_production | published
+delivered: 2026-07-01
+lab: docker
+source: weekly-episode-storyboard
+deliverables:
+  storyboard: STORYBOARD.md
+  script: script.yaml
+  blog: POST.md
+  youtube: YOUTUBE.md
+  lab: lab/docker-compose.yml
+tools_under_test: [picklescan, modelscan, modelaudit, fickling]
+target: malicious-model-file

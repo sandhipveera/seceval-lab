@@ -24,13 +24,18 @@ All should print a version. If `docker compose` errors, start Docker Desktop fir
 
 ---
 
-## Step 1 — Initialize the repo (already done for you)
+## Step 1 — Initialize the repo (run this yourself — 30 sec)
 
-I ran `git init` and made the first commit in this folder. Verify:
+A partial `.git/` may exist from setup but with stale lock files (the setup environment can't
+delete files in your folder). Reset it cleanly on your machine, where this just works:
 
 ```bash
-git log --oneline -1
-git status
+cd /Users/veera/dev/prod-eval/docs
+rm -rf .git                    # clears any partial repo + stale lock files
+git init -b main
+git add -A
+git commit -m "Security Lab: initial commit"
+git log --oneline -1           # verify
 ```
 
 If you want it on GitHub:
@@ -40,7 +45,8 @@ git remote add origin git@github.com:<you>/security-lab.git
 git push -u origin main
 ```
 
-> `.gitignore` already excludes secrets (`video/.env`), build output, and run artifacts.
+> `.gitignore` already excludes secrets (`video/.env`), build output, and run artifacts —
+> confirm with `git status` that `video/.env` is NOT listed once you create it.
 
 ---
 

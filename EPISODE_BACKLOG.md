@@ -7,7 +7,7 @@ fallbacks only). The weekly task pulls the next unchecked entry, delivers its pa
 ## Active slate (AI security)
 
 - [x] 01 — MCP / agent security teardown: poisoned MCP server vs mcp-scan / Golf Scanner *(delivered)*
-- [ ] 02 — "I beat the AI model scanner": picklescan 2025 bypasses vs ModelScan / ModelAudit / fickling
+- [x] 02 — "I beat the AI model scanner": picklescan 2025 bypasses vs ModelScan / ModelAudit / fickling *(delivered)*
 - [ ] 03 — LLM red-team showdown: Garak vs PyRIT vs Promptfoo
 - [ ] 04 — Prompt-injection firewalls: LLM Guard vs Vigil vs Rebuff vs Prompt Guard 2
 

@@ -1,0 +1,111 @@
+# Machine-readable twin of STORYBOARD.md — drives voiceover, recording, captions.
+# Narration text is identical to the storyboard.
+episode:
+  number: 2
+  slug: model-scanner-bypass
+  title: "I Hid Malware in an AI Model — Which Scanner Caught It?"
+  resolution: "1920x1080"
+  fps: 30
+  lab: docker
+
+voice:
+  provider: elevenlabs
+  voice_id: "${ELEVENLABS_VOICE_ID}"
+  model_id: "eleven_multilingual_v2"
+  stability: 0.45
+  similarity_boost: 0.80
+  style: 0.0
+  speed: 1.0
+
+scenes:
+  - id: s1_cold_open
+    narration: >-
+      This AI model file passed the security scanner — and then it ran my code anyway. That's not a
+      hypothetical: in December, researchers dropped three critical zero-days in picklescan, the
+      exact tool Hugging Face runs on every model you download. So I built a malicious model file
+      with a harmless canary payload, and asked four different scanners a simple question: can you
+      catch what's hiding inside? No marketing — just what each one flagged, and what walked right
+      past it.
+    action: { type: browser, url: "file://${ASSETS}/title_cold_open.html", duration_hint: 30 }
+
+  - id: s2_category
+    narration: >-
+      Here's the uncomfortable part almost nobody tells you. Most AI models are shipped as pickle
+      files — Python's built-in serialization format. And pickle isn't just data; it's a tiny
+      program. When you load the model, that program runs. So a model file can execute arbitrary
+      code the moment it's opened, before a single prediction. Roughly forty-five percent of popular
+      models on Hugging Face still use this format. The scanner between you and that code is usually
+      picklescan — which is exactly why breaking it is such a big deal right now.
+    action: { type: browser, url: "file://${ASSETS}/pickle_diagram.html", duration_hint: 60 }
+
+  - id: s3_threats
+    narration: >-
+      The bypasses are almost embarrassingly clever. One: picklescan uses a blocklist of dangerous
+      functions, so attackers just import a submodule the list doesn't name — the payload's the
+      same, the string doesn't match. Two: rename the file, or compress it with 7z instead of zip,
+      and the scanner doesn't even recognize it as a model to open. Three: put a broken opcode after
+      your payload — it runs first, then the scanner chokes on the error and reports nothing. Same
+      malware, four different ways to make the scanner look the other way.
+    action: { type: browser, url: "file://${ASSETS}/threats.html", duration_hint: 60 }
+
+  - id: s4_lab_rules
+    narration: >-
+      Here's the setup, and fairness matters. Everything runs locally in Docker on one isolated
+      network with no path to the internet — so nothing actually leaves. I build one malicious model
+      file whose payload does exactly one thing: touch an in-network canary. If the canary logs a
+      hit, the code ran. Then every scanner inspects the exact same file, in the same clean
+      container state. Same model, same payload — the only variable is the tool doing the catching.
+    action: { type: terminal, cast: "lab_bringup", duration_hint: 60 }
+
+  - id: s5_setup_coverage
+    narration: >-
+      Round one — getting each scanner running and seeing what it even looks at. picklescan is the
+      lightweight default, a blocklist of dangerous imports. ModelScan, from Protect AI, scans
+      several serialization formats and is what a lot of pipelines standardized on. ModelAudit,
+      Promptfoo's newer open-source scanner, claims the widest coverage — dozens of formats and
+      opcode-level analysis. And fickling, from Trail of Bits, flips the model entirely: instead of
+      a blocklist of bad things, it uses an allowlist of known-safe imports and blocks everything
+      else. Install times and coverage are on screen; full commands are in the repo.
+    action: { type: terminal, cast: "scanner_setup", duration_hint: 90 }
+
+  - id: s6_detection
+    narration: >-
+      Now the real test. I run every scanner against the same file, then against three evasive
+      variants — a deep-import that dodges the blocklist, a pickle renamed to a PyTorch extension,
+      and a broken archive. The plain payload is the easy case; most tools catch that. The
+      interesting story is the evasions. A blocklist that checks for an exact import name gets walked
+      past by a submodule it never listed. A scanner that trusts the file extension parses the
+      renamed file wrong and reports nothing. And the allowlist approach behaves very differently —
+      it doesn't care what the import is called, only whether it's on the safe list. I normalized
+      every result into one table so it's apples to apples. Here's who caught what.
+    action: { type: terminal, cast: "detection_run", duration_hint: 150 }
+
+  - id: s7_noise_cost
+    narration: >-
+      Detection isn't the whole story. A scanner that screams at every legitimate model trains you
+      to ignore it — and an allowlist that blocks unfamiliar-but-safe imports can do exactly that. So
+      I ran each tool against a set of clean, benign models and counted the false alarms, and I
+      timed every scan across small and large files. Deeper analysis costs time; a stricter allowlist
+      costs friction. Here's the price of each, measured under the same load.
+    action: { type: browser, url: "file://${ASSETS}/metrics.html", duration_hint: 75 }
+
+  - id: s8_scorecard
+    narration: >-
+      Same rubric every episode — install, detection, signal quality, performance, usability, docs,
+      and value. And like everything in this space, there's no single winner. picklescan is the fast
+      default, but this year proved a blocklist alone is not enough — patch it and don't rely on it
+      solo. ModelScan is a solid pipeline standard with broad format support. ModelAudit goes widest
+      and deepest and is the one I'd reach for when I actually want to find things. And fickling's
+      allowlist is the strongest posture against unknown tricks, at the cost of tuning. For anything
+      you didn't build yourself, the honest answer is layer them, and update relentlessly.
+    action: { type: browser, url: "file://${ASSETS}/scorecard.html", duration_hint: 105 }
+
+  - id: s9_outro
+    narration: >-
+      Everything here is reproducible — the malicious model file, the evasive variants, the scanner
+      commands, down to the commit hash. It's all benign: the payload just trips a canary on an
+      isolated network, so nothing leaves your machine and you can safely run it yourself and tell me
+      if your results differ. Next episode I put the LLM red-team frameworks head to head — Garak
+      versus PyRIT versus Promptfoo — and see which one actually breaks a model. If that sounds like
+      your kind of trouble, subscribe, and I'll see you in the lab.
+    action: { type: browser, url: "file://${ASSETS}/outro.html", duration_hint: 60 }
