@@ -229,3 +229,18 @@ payload — never a weaponized exploit. Don't build or run malicious model files
 don't own, and follow responsible disclosure if you find a real vulnerability in any scanner (as
 JFrog, ReversingLabs, and the "Hide and Seek" researchers did). Review each tool's license before
 publishing any benchmark figures.*
+
+**Disclaimer.** This is independent security research for defensive and educational purposes only. The
+results reflect the behavior of the specific tool versions listed (picklescan 0.0.31, ModelScan 0.8.5,
+ModelAudit 0.2.4, fickling 0.1.3), run in a single controlled, reproducible configuration against a
+synthetic evasion class on a specific date. They are the author's observations and opinions from that
+setup and are **not** a statement of fact about, nor a verdict on, any product's overall security,
+quality, or fitness for any purpose; different versions, configurations, or inputs may yield different
+results. picklescan, ModelScan, ModelAudit, fickling, PyTorch, Hugging Face, and all other product and
+company names are trademarks or registered trademarks of their respective owners, referenced here
+nominatively for identification and comparison only; their use does not imply any affiliation with,
+sponsorship by, or endorsement by those owners. The lab, this write-up, and all figures are provided
+"as is," without warranty of any kind, and the author accepts no liability for any use of this material.
+Every scanner tested is a valuable security tool; the takeaway is to **layer** them and keep them
+patched, not to disparage any of them. If you believe anything here is inaccurate, please open an issue
+on the repo and it will be corrected.

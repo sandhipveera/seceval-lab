@@ -1,11 +1,25 @@
 # Security Lab — AI Security Product Evaluations
 
+**Built by [AccessQuint](https://accessquint.com)** · Independent, reproducible, benign-canary evaluations of AI/ML security tooling.
+
 A reproducible content engine for a cybersecurity blog + YouTube series. Each episode is a
 hands-on, head-to-head evaluation of the latest AI-security tools, tested **locally in Docker**,
 with captured evidence and a public lab anyone can re-run. Voiceover in your own (ElevenLabs)
 voice; screen capture + assembly automated.
 
 > New here? Go straight to **[SETUP.md](SETUP.md)** for the step-by-step.
+
+## Featured — Episode 02: 4 AI Model Scanners vs. 1 Hidden Payload
+
+![Detection scorecard: four AI model scanners (picklescan, ModelScan, ModelAudit, fickling) vs. four evasion variants of one benign-canary payload, tested in an isolated lab. ModelAudit and fickling caught all four; picklescan 3/4; ModelScan 2/4; zero false positives on the clean set.](episodes/02-model-scanner-bypass/assets/scorecard.png)
+
+Can a malicious model file pass a scanner and still run code? I hid a **benign** canary payload in a
+pickle-based model, wrapped it in four evasion variants, and ran four scanners at it. Two caught
+everything; two missed live payloads — and the most interesting failure was a scanner that never even
+opened files it didn't recognize by extension. **[Read the full teardown →](episodes/02-model-scanner-bypass/POST.md)**
+
+*Independent research · benign, isolated, no-egress lab · product names are trademarks of their
+respective owners, used nominatively; no affiliation or endorsement.*
 
 ## Layout
 

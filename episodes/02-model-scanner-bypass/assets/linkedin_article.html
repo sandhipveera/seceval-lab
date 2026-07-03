@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LinkedIn Article — I Hid Malware in an AI Model</title>
+<style>
+  body { font: 17px/1.6 -apple-system, Segoe UI, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 30px; line-height: 1.25; }
+  h2 { font-size: 22px; margin-top: 32px; }
+  .imgnote { background:#f3f4f6; border:1px dashed #9aa4b2; padding:14px 16px; border-radius:8px; color:#334155; font-size:15px; }
+  ul { padding-left: 22px; }
+  .disc { font-size: 14px; color:#475569; border-top:1px solid #e2e8f0; margin-top:32px; padding-top:16px; }
+</style>
+</head>
+<body>
+
+<h1>I Hid Malware in an AI Model — Which Scanner Caught It?</h1>
+
+<p>An AI model file can pass a security scanner and still run your attacker&rsquo;s code &mdash; and this year that stopped being theoretical. In December 2025, JFrog&rsquo;s security team disclosed <strong>three critical zero-days in picklescan</strong> (CVE-2025-10155, -10156, and -10157, each rated <strong>CVSS 9.3</strong>) &mdash; the exact scanner Hugging Face runs on every model uploaded to the Hub. All three let a malicious model slip past as &ldquo;safe&rdquo; and execute code on load. They were fixed in picklescan <strong>0.0.31</strong>, but the deeper lesson is that the &ldquo;unscannable model file&rdquo; is having a moment, and the tools we lean on are not all equally hard to fool.</p>
+
+<p>So I built it in miniature: one malicious model file carrying a <strong>benign canary</strong> payload, plus four scanners &mdash; <strong>picklescan, ModelScan, ModelAudit, and fickling</strong> &mdash; tasked with catching it. Everything runs locally in Docker on an isolated network with no internet egress, the payload is a benign canary, and the whole setup is reproducible at a pinned commit.</p>
+
+<p class="imgnote">[[ INSERT SCORECARD IMAGE HERE &mdash; assets/scorecard.png ]]</p>
+
+<h2>Why the model file itself became an attack surface</h2>
+
+<p>Most machine-learning models ship as <strong>pickle</strong> files &mdash; Python&rsquo;s built-in object-serialization format. PyTorch&rsquo;s <code>.bin</code> and <code>.pt</code> files are pickle under the hood; so are countless <code>.pkl</code> artifacts. And a pickle is not a data format the way JSON is. It is effectively a tiny program: it contains opcodes, and one of them, <code>REDUCE</code>, calls an arbitrary callable with arbitrary arguments. When you <code>torch.load()</code> a model, that program runs &mdash; <em>before</em> the model makes a single prediction. Roughly <strong>45%</strong> of the most popular models on Hugging Face still use pickle, so this isn&rsquo;t a fringe concern; it&rsquo;s the default distribution format for a huge slice of the ecosystem.</p>
+
+<h2>The evasions, in plain terms</h2>
+
+<p>You don&rsquo;t need to read pickle bytecode to reason about the bypasses. Three patterns cover most of what&rsquo;s used against scanners:</p>
+
+<ul>
+  <li><strong>Blocklist evasion.</strong> picklescan works from a blocklist of known-dangerous callables. A blocklist only catches names it already knows &mdash; reach the dangerous call by a route the list never enumerated and the string never matches.</li>
+  <li><strong>Renamed or broken archives.</strong> A scanner has to recognize and open a file before it can inspect it. CVE-2025-10155 used a renamed pickle; ReversingLabs&rsquo; <strong>nullifAI</strong> models used 7z instead of zip so the scanner couldn&rsquo;t open the container at all.</li>
+  <li><strong>Payload-then-break.</strong> Put the payload at the <em>start</em> of the stream and a broken opcode right after it. The payload executes first; then the scanner hits the error, reports a parse failure, and never mentions the malware it already walked past.</li>
+</ul>
+
+<p>Most of these aren&rsquo;t exotic exploits. They&rsquo;re the natural failure modes of a scanner that reasons about <em>names</em> and <em>file types</em> rather than <em>intent</em>.</p>
+
+<h2>The test, kept fair</h2>
+
+<p>Everything runs in Docker on a single bridge network marked <code>internal</code>, so no container can reach the internet. The embedded payload does exactly one thing: send a request to an in-network <strong>canary sink</strong>. When the payload runs, the sink logs a hit &mdash; that hit is my ground truth that the code executed.</p>
+
+<p>From one base file I generate four variants, each isolating a single evasion axis against a <strong>known-bad global</strong> (<code>builtins.eval</code>) so the easy case is a fair true-positive baseline every scanner should catch: a <strong>plain</strong> baseline, the same global delivered via the <strong>STACK_GLOBAL</strong> opcode, a pickle <strong>renamed</strong> to a <code>.bin</code> extension, and a <strong>broken-archive</strong> container. Each scanner inspects the exact same files.</p>
+
+<h2>What each scanner caught</h2>
+
+<p>The fair baseline holds: with a known-bad <code>eval</code>, every scanner catches the plain case <em>and</em> the STACK_GLOBAL opcode form. The real misses are structural. <strong>ModelScan</strong> flagged <code>eval</code> as CRITICAL whenever it actually opened a file &mdash; but it routes by extension and <strong>never scanned</strong> the <code>.bin</code>-renamed or broken-archive files at all. <strong>picklescan</strong> inspects regardless of extension, but <strong>mis-parsed</strong> the broken-archive container and reported nothing. Only <strong>ModelAudit</strong> (behavioral) and <strong>fickling</strong> (allowlist) caught all four, because neither depends on extension routing or a cleanly-parseable container.</p>
+
+<p>Totals: <strong>ModelAudit 4/4, fickling 4/4, picklescan 3/4, ModelScan 2/4</strong>. And the ground truth matters here: loading each file in an isolated loader confirmed all four malicious variants actually execute code, while all three clean models stayed silent &mdash; so every &ldquo;safe&rdquo;/skipped verdict above is a real miss on a genuinely live file, not a false alarm.</p>
+
+<h2>Cost and noise</h2>
+
+<p><strong>Zero false positives</strong> on the clean set for all four. On speed and footprint: picklescan is effectively instant (sub-millisecond, ~23 MB peak); fickling ~50 ms / ~34 MB; ModelScan ~90 ms / ~35 MB; ModelAudit ~0.45 s / ~119 MB &mdash; its deeper opcode and pattern analysis costs the most, a fine trade for a pre-production gate.</p>
+
+<h2>The verdict</h2>
+
+<p>Scored on a weighted rubric (detection 30%, signal 15%, performance 10%, and install/UX/docs/value 45%):</p>
+
+<ul>
+  <li><strong>ModelAudit &mdash; 8.6.</strong> Widest and deepest; the one I&rsquo;d reach for when I actually want to <em>find</em> things, with opcode-level analysis and CI-friendly SARIF output.</li>
+  <li><strong>fickling &mdash; 8.4.</strong> Its allowlist is the strongest posture against tricks nobody has enumerated yet.</li>
+  <li><strong>picklescan &mdash; 8.3.</strong> The fast, ubiquitous default &mdash; patch it to the latest release and never rely on a blocklist alone.</li>
+  <li><strong>ModelScan &mdash; 7.3.</strong> Flags known-bad globals well, but confirm what it&rsquo;s actually scanning &mdash; extension routing let two live files through unscanned.</li>
+</ul>
+
+<p>For any model you didn&rsquo;t build yourself, the honest answer is to <strong>layer them</strong>: a fast blocklist scan as a CI gate, a deeper opcode/allowlist scan before anything reaches production, and a hard rule to update relentlessly &mdash; this category&rsquo;s threat model shifts every few weeks.</p>
+
+<h2>Reproduce it yourself</h2>
+
+<p>Every number above comes from the lab run, reproducible at a pinned commit: <strong>github.com/sandhipveera/seceval-lab</strong> (@465a22c). It&rsquo;s all benign &mdash; the payload trips a canary on an isolated network, so nothing leaves your machine and you can see where your results diverge. If they differ from mine, that&rsquo;s the point &mdash; tell me.</p>
+
+<p class="disc"><strong>Disclaimer.</strong> Independent security research for defensive and educational purposes only. Results reflect the behavior of the specific tool versions tested (picklescan 0.0.31, ModelScan 0.8.5, ModelAudit 0.2.4, fickling 0.1.3) in a single controlled, reproducible configuration against a synthetic evasion class on a specific date. They are the author&rsquo;s observations and opinions from that setup &mdash; not a statement of fact about, nor a verdict on, any product&rsquo;s overall security, quality, or fitness for any purpose; different versions, configurations, or inputs may yield different results. picklescan, ModelScan, ModelAudit, fickling, PyTorch, Hugging Face, and all other product and company names are trademarks of their respective owners, referenced nominatively for identification and comparison only; their use does not imply any affiliation with, sponsorship by, or endorsement by those owners. I am not endorsing, and have no association with, any product in this study. Provided &ldquo;as is,&rdquo; without warranty of any kind and without liability. Every scanner tested is a valuable security tool; the takeaway is to layer them and keep them patched. Spotted an inaccuracy? Open an issue on the repo and it will be corrected.</p>
+
+</body>
+</html>
