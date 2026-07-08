@@ -1,0 +1,4 @@
+flask==3.0.3
+# ProtectAI Rebuff self-hosting SDK. Pin a known-good version:
+#   pip install rebuff
+rebuff

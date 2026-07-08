@@ -1,0 +1,85 @@
+# Episode 04 lab — prompt-injection firewall teardown. 100% local Docker, isolated, NO egress.
+# Brings up: a deliberately vulnerable LLM app (that will follow an injected exfil instruction), an
+# in-network exfil "canary" sink (so a benign payload trips a tripwire instead of leaving the host),
+# and a firewall runner that mounts each guard in front of the app one at a time. Each firewall is a
+# separate profile so only one guards the door per run — that's the fairness rule.
+name: ep04-pif-lab
+
+networks:
+  labnet:
+    driver: bridge
+    internal: true        # <-- no route to the internet. Nothing actually exfiltrates.
+
+services:
+  # Benign exfil sink: the vulnerable app "sends data" here; receiving anything = injection won.
+  canary-sink:
+    image: mendhak/http-https-echo:31
+    container_name: ep04-canary
+    networks: [labnet]
+
+  # Deliberately vulnerable chat/RAG app. With no guard, an injected instruction makes it POST its
+  # "sensitive" context to CANARY_URL. MODE=stub uses a deterministic planner (no model key needed).
+  vuln-app:
+    build: ./vuln-app
+    container_name: ep04-vuln-app
+    networks: [labnet]
+    depends_on: [canary-sink]
+    environment:
+      CANARY_URL: "http://ep04-canary:8080/exfil"   # benign, in-network only
+      MODE: "stub"      # set to "live" + add LLM_API_KEY to drive a real model
+      # GUARD names which firewall proxies inbound text this run; "none" = baseline (attack works).
+      # Overridable by scripts/run_firewall.sh (export GUARD=<name>); defaults to none.
+      GUARD: "${GUARD:-none}"     # none | prompt-guard-2 | vigil | llm-guard | rebuff
+
+  # In-network battery runner. No profile at `up`; started on demand via
+  #   docker compose run --rm runner python replay.py <firewall> <attacks|benign>
+  # Reaches the app over labnet, so no host-port publishing on the internal net.
+  runner:
+    image: python:3.11-slim
+    container_name: ep04-runner
+    networks: [labnet]
+    profiles: ["runner"]
+    depends_on: [vuln-app]
+    working_dir: /scripts
+    environment:
+      APP_URL: "http://ep04-vuln-app:8000"
+      ARTIFACTS_DIR: "/artifacts"
+      BATTERY_DIR: "/scripts/battery"
+    volumes:
+      - "./scripts:/scripts"
+      - "./artifacts:/artifacts"
+    # Overridden by `docker compose run` args; the default just prints usage.
+    entrypoint: ["python"]
+    command: ["-c", "print('ep04 runner: invoke via docker compose run --rm runner python replay.py <fw> <mode>')"]
+
+  # --- Firewalls under test. Exactly one profile is active per run (same target, same attacks). ---
+
+  fw-prompt-guard-2:
+    build: ./firewalls/prompt-guard-2   # Meta Llama Prompt Guard 2 (86M/22M) binary classifier
+    container_name: ep04-fw-pg2
+    networks: [labnet]
+    profiles: ["prompt-guard-2"]
+    environment:
+      MODEL_ID: "meta-llama/Llama-Prompt-Guard-2-86M"   # review Llama license before publishing
+      OFFLINE: "true"   # model weights baked into the image; no network pull at runtime
+
+  fw-vigil:
+    build: ./firewalls/vigil            # deadbits/vigil-llm: patterns + embedding similarity
+    container_name: ep04-fw-vigil
+    networks: [labnet]
+    profiles: ["vigil"]
+
+  fw-llm-guard:
+    build: ./firewalls/llm-guard        # protectai/llm-guard PromptInjection input scanner
+    container_name: ep04-fw-llmguard
+    networks: [labnet]
+    profiles: ["llm-guard"]
+
+  fw-rebuff:
+    build: ./firewalls/rebuff           # protectai/rebuff: heuristics + LLM + vector + canary tokens
+    container_name: ep04-fw-rebuff
+    networks: [labnet]
+    profiles: ["rebuff"]
+    environment:
+      # Self-hardening layers; LLM check is stubbed offline unless LLM_API_KEY is provided.
+      REBUFF_MODE: "offline"

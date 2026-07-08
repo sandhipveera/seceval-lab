@@ -1,0 +1,5 @@
+flask==3.0.3
+# vigil-llm: install from PyPI if your pin is published, else from the repo:
+#   pip install vigil-llm
+# or:  pip install "git+https://github.com/deadbits/vigil-llm@<pinned-sha>"
+vigil-llm

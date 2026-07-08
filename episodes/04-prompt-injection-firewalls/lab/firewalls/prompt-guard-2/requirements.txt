@@ -1,0 +1,5 @@
+flask==3.0.3
+torch>=2.2
+transformers>=4.44
+huggingface_hub>=0.24
+sentencepiece>=0.2

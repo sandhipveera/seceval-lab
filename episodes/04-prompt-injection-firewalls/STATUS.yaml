@@ -1,0 +1,15 @@
+episode: 04
+slug: prompt-injection-firewalls
+title: "I Smuggled a Prompt Injection Past 4 AI Firewalls — Which One Caught It?"
+status: new            # new | in_production | published
+delivered: 2026-07-03
+lab: docker
+source: weekly-episode-storyboard
+deliverables:
+  storyboard: STORYBOARD.md
+  script: script.yaml
+  blog: POST.md
+  youtube: YOUTUBE.md
+  lab: lab/docker-compose.yml
+tools_under_test: [llm-guard, vigil, rebuff, prompt-guard-2]
+target: vulnerable-llm-app

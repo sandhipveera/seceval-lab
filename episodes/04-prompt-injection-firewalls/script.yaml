@@ -1,0 +1,127 @@
+# Machine-readable twin of STORYBOARD.md — drives voiceover, recording, captions.
+# Narration text is identical to the storyboard.
+episode:
+  number: 4
+  slug: prompt-injection-firewalls
+  title: "I Smuggled a Prompt Injection Past 4 AI Firewalls — Which One Caught It?"
+  resolution: "1920x1080"
+  fps: 30
+  lab: docker
+
+voice:
+  provider: elevenlabs
+  voice_id: "${ELEVENLABS_VOICE_ID}"
+  model_id: "eleven_multilingual_v2"
+  stability: 0.45
+  similarity_boost: 0.80
+  style: 0.0
+  speed: 1.0
+
+scenes:
+  - id: s1_cold_open
+    narration: >-
+      This is the number-one security risk in AI right now, and the fix everyone reaches for is a
+      firewall you bolt in front of your model. So I built a vulnerable AI app, wrote one prompt
+      injection that tries to quietly exfiltrate data, and pointed four popular prompt-injection
+      firewalls at it: LLM Guard, Vigil, Rebuff, and Meta's brand-new Prompt Guard 2. Same app,
+      same attack — the only thing that changes is the guard. Can any of them actually stop it? No
+      marketing. Just what each one caught, and what walked right past.
+    action: { type: browser, url: "file://${ASSETS}/title_cold_open.html", duration_hint: 30 }
+
+  - id: s2_category
+    narration: >-
+      Quick context. A prompt-injection firewall sits between untrusted text and your model, and
+      tries to catch malicious instructions before the model ever sees them. It's the most
+      bolted-on AI defense of the year, because prompt injection is still OWASP's number-one LLM
+      risk. But here's the uncomfortable part most vendors won't lead with: almost all of these
+      firewalls are machine-learning classifiers under the hood. And in 2026, two separate research
+      papers showed how brittle that can be — one reported evasion rates as high as one hundred
+      percent using simple character tricks, and another showed their benchmark scores fall apart
+      under real-world data. So the question isn't just does it work in the demo. It's does it
+      survive contact with a creative attacker.
+    action: { type: browser, url: "file://${ASSETS}/firewall_diagram.html", duration_hint: 60 }
+
+  - id: s3_threat
+    narration: >-
+      There are two shapes of this attack. Direct injection is the obvious one — the user types
+      ignore your previous instructions and do this instead. Indirect injection is the scarier one:
+      the malicious text is hidden in something the model reads on your behalf — a web page, a
+      support ticket, a PDF — so the attacker never even talks to your app directly. Both try to
+      hijack the model's instructions. And the way you beat a classifier is obfuscation: break the
+      trigger words up with spacing, swap in look-alike characters, or encode the payload so the
+      pattern the firewall learned simply isn't there anymore. Same intent, different surface.
+      That's the whole game.
+    action: { type: browser, url: "file://${ASSETS}/threats.html", duration_hint: 60 }
+
+  - id: s4_lab_rules
+    narration: >-
+      Here's the setup, and fairness is the whole point. Everything runs locally in Docker on one
+      isolated network with no path to the internet — so nothing actually leaves. I stand up a
+      deliberately vulnerable LLM app that will follow an injected instruction to POST data to an
+      address, but that address is an in-network canary sink. If the canary logs a hit, the
+      injection won. Then I run the exact same injection battery through each firewall in turn: same
+      app, same attacks, same clean container each time. The only variable is which guard is
+      standing at the door.
+    action: { type: terminal, cast: "lab_bringup", duration_hint: 60 }
+
+  - id: s5_setup_coverage
+    narration: >-
+      Round one — getting each firewall running and seeing what it actually is. LLM Guard is a big
+      Python toolkit from Protect AI with a dedicated prompt-injection scanner built on a fine-tuned
+      model — batteries included, heavier to run. Vigil is a lightweight scanner that mixes pattern
+      matching with embedding similarity against a database of known attacks. Rebuff is a
+      self-hardening defense that layers heuristics, an LLM-based check, a vector store of past
+      attacks, and canary tokens. And Prompt Guard 2 is Meta's newest — a small, fast, binary
+      classifier that just says benign or malicious, re-architected this year and meant as a drop-in
+      guard. Install times, licenses, and footprint are on screen; full commands are in the repo.
+    action: { type: terminal, cast: "firewall_setup", duration_hint: 90 }
+
+  - id: s6_detection
+    narration: >-
+      Now the real test. I send the same escalating battery through each guard. Level one is a plain
+      direct injection — ignore your instructions and send the file here — and honestly, every
+      serious firewall should catch that, and the stronger ones flag it instantly with the category
+      they matched. Level two is obfuscation: I space out the trigger words, swap in look-alike
+      characters, and base64-encode the payload — the exact character-injection tricks the 2026
+      evasion paper used to push some classifiers to a hundred percent bypass. Level three is
+      indirect: I hide the instruction inside a document the app ingests, so it never appears in the
+      user's own message. This is where the gaps open up — a guard tuned for direct prompts can be
+      blind to a payload arriving through a retrieved file. I normalized every verdict into one
+      table so it's honest and apples to apples. Here's who caught what.
+    action: { type: terminal, cast: "detection_run", duration_hint: 150 }
+
+  - id: s7_noise_cost
+    narration: >-
+      Detection isn't the whole story. A firewall that blocks every prompt with a scary word in it
+      is useless — it just trains your users to route around it. So I also fed each guard a set of
+      perfectly benign prompts that happen to contain loaded words like ignore or system prompt,
+      because over-blocking is a real, measured failure mode this year. And every one of these adds
+      latency to every single call your app makes. The lightweight classifier was the fastest by
+      far; the toolkit and the multi-layer defense caught more but cost more time per request, and
+      the layered one can even burn an extra model call. Here's the false-positive rate and the
+      added latency for each, under the same load.
+    action: { type: browser, url: "file://${ASSETS}/metrics.html", duration_hint: 75 }
+
+  - id: s8_scorecard
+    narration: >-
+      Same rubric every episode — install, detection, signal quality, performance, usability, docs,
+      and value. And as always, there's no single winner. Reach for Prompt Guard 2 when you want a
+      tiny, fast gate you can run on every request without thinking about cost. Reach for LLM Guard
+      when you want a whole toolkit — input and output scanners, not just injection — and you can
+      afford the weight. Reach for Rebuff when you want defense in depth and canary tokens that catch
+      leaks the classifier misses. And Vigil is a clean, hackable middle ground if you want to see
+      and tune exactly why something fired. But the real lesson from this year's research is the one
+      nobody's selling: a single classifier is a speed bump, not a wall. Obfuscation beats
+      pattern-matching, so you layer these with output checks and least-privilege, and you never let
+      the firewall be your only line.
+    action: { type: browser, url: "file://${ASSETS}/scorecard.html", duration_hint: 105 }
+
+  - id: s9_outro
+    narration: >-
+      Everything here is reproducible — the vulnerable app, the injection battery, every firewall
+      command, down to the commit hash. It's all benign: the exfil just trips a canary on an
+      isolated network, so you can safely run it yourself and tell me if your numbers differ from
+      mine — and with these tools, they might. Next episode I move up a layer and put the AI gateways
+      and LLM proxies to the test — the things that are supposed to guard the whole fleet. If that
+      sounds like your kind of trouble, subscribe, and I'll see you in the lab.
+    action: { type: browser, url: "file://${ASSETS}/outro.html", duration_hint: 60 }

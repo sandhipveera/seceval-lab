@@ -1,0 +1,6 @@
+artifacts/*
+!artifacts/.gitkeep
+
+# python bytecode
+__pycache__/
+*.pyc
