@@ -195,7 +195,7 @@ multi-turn, tool-misuse attacks a fast scan will never surface.
 ## Reproduce it yourself
 
 Every number above comes from the lab run, and the whole thing is reproducible from
-[the repo](https://github.com/sandhipveera/seceval-lab) at commit `[FILL]` — same vulnerable agent, same
+[the repo](https://github.com/sandhipveera/seceval-lab) at commit `75b5f53` — same vulnerable agent, same
 canary tool, same attack configs for all three frameworks. It's all benign: the worst the agent can
 do is trip a canary on an isolated network, so you can safely run it and see where your
 attack-success rates diverge from mine.
