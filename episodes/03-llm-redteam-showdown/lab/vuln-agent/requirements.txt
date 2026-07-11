@@ -1,0 +1,4 @@
+# Pinned. Only Flask is needed; the agent uses stdlib urllib for backend/canary
+# calls (both in-network only). No external LLM SDK required in stub mode.
+Flask==3.0.3
+Werkzeug==3.0.4

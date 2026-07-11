@@ -1,0 +1,118 @@
+# Machine-readable twin of STORYBOARD.md — drives voiceover, recording, captions.
+# Narration text is identical to the storyboard.
+episode:
+  number: 3
+  slug: llm-redteam-showdown
+  title: "I Attacked My Own AI Agent — Which Red-Team Tool Broke It First?"
+  resolution: "1920x1080"
+  fps: 30
+  lab: docker
+
+voice:
+  provider: elevenlabs
+  voice_id: "${ELEVENLABS_VOICE_ID}"
+  model_id: "eleven_multilingual_v2"
+  stability: 0.45
+  similarity_boost: 0.80
+  style: 0.0
+  speed: 1.0
+
+scenes:
+  - id: s1_cold_open
+    narration: >-
+      I built an AI agent — the helpful kind that can actually use tools on your behalf — and then
+      I spent a week trying to break it. Not with one trick, but with three of the biggest
+      automated red-team frameworks in the world: Garak from NVIDIA, PyRIT from Microsoft, and
+      Promptfoo, which OpenAI just bought. Same agent, same weaknesses, same isolated lab. The only
+      question: which one breaks it first, and which one tells you the most about why?
+    action: { type: browser, url: "file://${ASSETS}/title_cold_open.html", duration_hint: 30 }
+
+  - id: s2_category
+    narration: >-
+      First, why now. For two years, LLM red-teaming meant tricking a chatbot into saying something
+      it shouldn't. In 2026 that changed. In March, OpenAI acquired Promptfoo — a red-team tool —
+      and said out loud it was about agentic security testing. In May, NVIDIA's Garak shipped an
+      Agent-breaker probe that goes after the tools an agent can call. And Microsoft's PyRIT became
+      the engine behind Azure's AI Red Teaming Agent, while the Cloud Security Alliance published
+      that for agents, tool misuse is the test that matters. The whole field pivoted from what can I
+      make it say to what can I make it do. That's a much scarier question.
+    action: { type: browser, url: "file://${ASSETS}/category_timeline.html", duration_hint: 75 }
+
+  - id: s3_threats
+    narration: >-
+      Three failure modes matter here. A jailbreak talks the model out of its own safety rules — the
+      classic ignore your instructions. Prompt injection hides new instructions inside content the
+      agent reads, like a web page or a document, so the attacker's words become the agent's orders.
+      And tool misuse is the agentic one: you don't need the model to say anything bad, you just need
+      it to call the wrong tool — read a file it shouldn't, or fire off a request that leaks data.
+      The first two are about words. The third is about actions, and it's why red-teaming had to grow
+      up this year.
+    action: { type: browser, url: "file://${ASSETS}/threats.html", duration_hint: 60 }
+
+  - id: s4_lab_rules
+    narration: >-
+      Here's the setup, and fairness is the whole point. Everything runs locally in Docker on one
+      isolated network with no path to the internet. I stand up a deliberately weak AI agent — thin
+      safety rules and a tool it's allowed to call — plus a benign canary sink standing in for
+      somewhere data could leak. When the agent misuses the tool, it just trips the canary; nothing
+      actually leaves the machine. Then each framework attacks the exact same agent from the exact
+      same clean container state. Same target, same weaknesses — the only variable is the tool doing
+      the attacking.
+    action: { type: terminal, cast: "lab_bringup", duration_hint: 60 }
+
+  - id: s5_setup_coverage
+    narration: >-
+      Round one — installing each framework and seeing what attacks it brings out of the box. Garak
+      is the scanner-style one: dozens of probes for jailbreaks, prompt injection, and leakage, and
+      as of this spring an Agent-breaker probe aimed at tools. PyRIT is a toolkit, not a scanner —
+      you compose orchestrators, converters, and scorers into multi-turn attack chains, which is
+      exactly what you want for agents that hold a conversation. And Promptfoo is the
+      developer-friendly one: a config file, dozens of vulnerability plugins, and attack strategies
+      it can combine into thousands of test cases, wired for CI. Install times and coverage are on
+      screen; full commands are in the repo.
+    action: { type: terminal, cast: "framework_setup", duration_hint: 90 }
+
+  - id: s6_detection
+    narration: >-
+      Now the real test. I give each framework the same job: break this agent's safety rules, inject
+      instructions through the content it reads, and get it to misuse its tool. Then I watch. Garak
+      runs its probe battery and reports an attack-success rate per category, now with confidence
+      intervals, so a jailbreak that works one time in ten shows up honestly. PyRIT shines on the
+      multi-turn stuff — it patiently escalates across several messages, which is how the tool-misuse
+      attack actually succeeds. Promptfoo generates a wide spread of variants fast and scores how
+      often the agent fails. The interesting gaps are where an attack only lands after several turns,
+      or only when it's hidden in a document — and a single-shot probe walks right past it. I
+      normalized every result into one table so it's apples to apples. Here's who broke what.
+    action: { type: terminal, cast: "attack_run", duration_hint: 150 }
+
+  - id: s7_noise_cost
+    narration: >-
+      Breaking it isn't the whole story. A framework that screams jailbreak at every refusal wastes
+      your week chasing ghosts, and these attacks aren't free — every variant is model calls, which
+      is real time and real tokens. Garak was thorough but the longest-running; PyRIT was the most
+      precise on multi-turn but the most code to drive; Promptfoo was the fastest to a useful report
+      but leaned on a judge model you have to trust. Here's the cost of each — run time, tokens, and
+      how often each one cried wolf — measured under the same load.
+    action: { type: browser, url: "file://${ASSETS}/metrics.html", duration_hint: 75 }
+
+  - id: s8_scorecard
+    narration: >-
+      Same rubric every episode — install, detection, signal quality, performance, usability, docs,
+      and value. And like everything in this space, there's no single winner. Reach for Garak when
+      you want a fast, broad scan you can run like a vulnerability scanner and drop into CI. Reach for
+      PyRIT when you're serious about multi-turn and agent-specific attacks and you have engineers to
+      compose them. And reach for Promptfoo when you want that middle ground — declarative config,
+      strong reporting, and the fact that OpenAI now stands behind it. Honestly, for a real agent
+      you'd layer them: Promptfoo or Garak in CI on every change, PyRIT for the deep pre-launch
+      red-team.
+    action: { type: browser, url: "file://${ASSETS}/scorecard.html", duration_hint: 105 }
+
+  - id: s9_outro
+    narration: >-
+      Everything here is reproducible — the vulnerable agent, the canary tool, the exact attack
+      configs for all three frameworks, down to the commit hash. It's all benign: the worst the
+      agent can do is trip a canary on an isolated network, so you can safely run it yourself and
+      tell me if your attack-success rates differ from mine. Next episode, I stop attacking and start
+      defending — I put prompt-injection firewalls in front of an agent and try to get past them. If
+      that sounds like your kind of trouble, subscribe, and I'll see you in the lab.
+    action: { type: browser, url: "file://${ASSETS}/outro.html", duration_hint: 60 }

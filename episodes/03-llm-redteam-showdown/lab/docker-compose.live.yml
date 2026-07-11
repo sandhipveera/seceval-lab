@@ -1,0 +1,49 @@
+# =============================================================================
+# LIVE ADVERSARIAL OVERRIDE  (apply with: -f docker-compose.yml -f docker-compose.live.yml)
+# -----------------------------------------------------------------------------
+# !!! THIS OVERRIDE OPENS EGRESS TO CLOUD LLM PROVIDERS !!!
+#
+#   * The vuln-agent runs MODE=live and calls a REAL target model (LLM_API_KEY /
+#     TARGET_MODEL) over the network.
+#   * PyRIT runs a GENUINE multi-turn CrescendoAttack driven by a REAL adversarial
+#     model (ADVERSARIAL_ENDPOINT / ADVERSARIAL_KEY / ADVERSARIAL_MODEL).
+#
+# This means REAL API TOKENS and REAL COST. It is NOT the published benchmark:
+# the offline benchmark uses the BASE compose only (labnet is internal:true, no
+# egress, deterministic mock). Use this override deliberately, for a live demo.
+#
+# The attack itself stays BENIGN: the only "exfil" is still the in-network canary
+# (canary-sink stays on labnet only, never reachable from outside). Egress exists
+# solely so the two LLM clients (vuln-agent -> target model, pyrit -> adversarial
+# model) can reach their cloud providers.
+# =============================================================================
+
+networks:
+  # `labnet` (internal:true) is inherited from the base compose and keeps the
+  # canary in-network. We ADD a second, non-internal network for cloud egress.
+  egress:
+    driver: bridge
+    internal: false
+
+services:
+  # Target-model client: proxy to a REAL model over egress. Keeps CANARY_URL
+  # in-network (labnet) so the canary never leaves.
+  vuln-agent:
+    networks: [labnet, egress]
+    environment:
+      MODE: "live"
+      LLM_API_KEY: "${LLM_API_KEY}"
+      LIVE_MODEL: "${TARGET_MODEL:-gpt-4o-mini}"
+      SYSTEM_PROMPT: "${SYSTEM_PROMPT:-weak}"
+      # CANARY_URL intentionally left as the base in-network value.
+
+  # canary-sink stays on labnet ONLY (no override needed here — documented for clarity).
+
+  # Adversarial-model client: PyRIT reaches the cloud attacker model over egress
+  # while still talking to the local vuln-agent over labnet.
+  pyrit:
+    networks: [labnet, egress]
+    environment:
+      ADVERSARIAL_ENDPOINT: "${ADVERSARIAL_ENDPOINT}"
+      ADVERSARIAL_KEY: "${ADVERSARIAL_KEY}"
+      ADVERSARIAL_MODEL: "${ADVERSARIAL_MODEL:-gpt-4o}"

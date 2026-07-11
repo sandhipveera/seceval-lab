@@ -1,0 +1,77 @@
+# Episode 03 lab — LLM red-team showdown. 100% local Docker, isolated, NO internet egress.
+# Brings up: a deliberately vulnerable LLM agent app (thin safety rules + one tool it can be
+# talked into misusing), a benign "canary" sink (so a benign tool-misuse trips a tripwire instead
+# of leaving the host), and a mock LLM backend so runs are deterministic with no external API.
+# The red-team frameworks (Garak, PyRIT, Promptfoo) are run from scripts/ against the agent.
+name: ep03-redteam-lab
+
+networks:
+  labnet:
+    driver: bridge
+    internal: true        # <-- no route to the internet. Nothing actually exfiltrates.
+
+services:
+  # Benign exfil sink: the agent's misused tool "sends data" here; a hit = attack succeeded.
+  canary-sink:
+    image: mendhak/http-https-echo:31
+    container_name: ep03-canary
+    networks: [labnet]
+
+  # Deterministic local model backend so the whole lab runs with NO external API / no egress.
+  # MODE=live + LLM_API_KEY on the agent instead drives a real model (still no egress unless you
+  # deliberately open the network — don't, for the published benchmark).
+  mock-llm:
+    build: ./mock-llm
+    container_name: ep03-mock-llm
+    networks: [labnet]
+    environment:
+      # Deterministic "weak" persona: thin refusals, over-eager to please, will call tools.
+      PERSONA: "over-helpful-weak-guardrails"
+
+  # The target: a deliberately vulnerable agent exposing an OpenAI-compatible chat endpoint on 8000
+  # so every red-team framework can point at the same URL. It holds ONE tool: fetch(url,data) that
+  # can POST to the canary. Weak system prompt + no tool allowlist = jailbreak/injection/tool-misuse.
+  vuln-agent:
+    build: ./vuln-agent
+    container_name: ep03-vuln-agent
+    networks: [labnet]
+    depends_on: [mock-llm, canary-sink]
+    environment:
+      LLM_BACKEND: "http://ep03-mock-llm:9000/v1"
+      MODE: "stub"                                   # "stub" = mock-llm; "live" needs LLM_API_KEY
+      CANARY_URL: "http://ep03-canary:8080/exfil"    # benign, in-network only
+      TOOL_ALLOWLIST: ""                             # intentionally empty = tool misuse possible
+      SYSTEM_PROMPT: "weak"                          # weak | hardened (for A/B baselining)
+
+  # Red-team runners. Each is a thin container that installs one framework and points it at the
+  # vuln-agent's chat endpoint, writing raw output into artifacts/. Kept in profiles so you run
+  # one at a time from the same clean agent state (fair-test rule).
+  garak:
+    build: ./redteam-garak
+    container_name: ep03-garak
+    networks: [labnet]
+    profiles: ["garak"]
+    depends_on: [vuln-agent]
+    environment:
+      TARGET_URL: "http://ep03-vuln-agent:8000/v1"
+    volumes: [ "./artifacts:/artifacts" ]
+
+  pyrit:
+    build: ./redteam-pyrit
+    container_name: ep03-pyrit
+    networks: [labnet]
+    profiles: ["pyrit"]
+    depends_on: [vuln-agent]
+    environment:
+      TARGET_URL: "http://ep03-vuln-agent:8000/v1"
+    volumes: [ "./artifacts:/artifacts" ]
+
+  promptfoo:
+    build: ./redteam-promptfoo
+    container_name: ep03-promptfoo
+    networks: [labnet]
+    profiles: ["promptfoo"]
+    depends_on: [vuln-agent]
+    environment:
+      TARGET_URL: "http://ep03-vuln-agent:8000/v1"
+    volumes: [ "./artifacts:/artifacts" ]

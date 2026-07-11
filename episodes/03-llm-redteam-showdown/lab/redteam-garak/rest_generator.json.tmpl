@@ -1,0 +1,21 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "vuln-agent",
+      "//comment": "Points garak's REST generator at the vuln-agent OpenAI-compatible endpoint. __TARGET_URL__ is substituted by entrypoint.sh to ${TARGET_URL}/chat/completions.",
+      "uri": "__TARGET_URL__/chat/completions",
+      "method": "post",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "req_template_json_object": {
+        "model": "vuln-agent",
+        "messages": [
+          {"role": "user", "content": "$INPUT"}
+        ]
+      },
+      "response_json": true,
+      "response_json_field": "$.choices[0].message.content"
+    }
+  }
+}

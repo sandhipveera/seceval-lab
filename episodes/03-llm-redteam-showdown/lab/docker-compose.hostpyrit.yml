@@ -1,0 +1,30 @@
+# =============================================================================
+# BENIGN CANARY LAB — override for the HOST-RUN OAuth-CLI adversarial PyRIT path
+# -----------------------------------------------------------------------------
+# Publishes the vuln-agent on localhost:18000 so a PyRIT run that lives ON THE
+# HOST (redteam-pyrit/run_host.py, driven by your OAuth'd CLI) can reach the
+# target. Apply alongside the base:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.hostpyrit.yml up -d --build
+#
+# WHY A SECOND NETWORK: labnet is `internal: true`, and Docker cannot publish a
+# host port for a container that is ONLY on an internal network (no inbound NAT
+# path). So we attach the vuln-agent to an extra NON-internal bridge (`hostaccess`)
+# purely to enable host<->container port publishing. The vuln-agent stays
+# MODE=stub (deterministic local mock) and never makes external calls, so this
+# doesn't create a real exfil path; mock-llm and canary-sink remain labnet-only
+# (internal, no published ports, no egress). The published offline benchmark uses
+# the BASE compose only (labnet-only, no ports). The only thing that touches the
+# network off-host is the vendor CLI, which runs OUTSIDE Docker.
+# =============================================================================
+networks:
+  hostaccess:
+    driver: bridge          # NOT internal -> enables host<->container publishing
+
+services:
+  vuln-agent:
+    networks:
+      - labnet              # keep talking to mock-llm + canary on the internal net
+      - hostaccess          # + a host-reachable bridge so the port can publish
+    ports:
+      - "18000:8000"        # localhost:18000 -> agent :8000 (for host-run PyRIT)

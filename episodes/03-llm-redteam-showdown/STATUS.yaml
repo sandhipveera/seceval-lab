@@ -1,0 +1,15 @@
+episode: 03
+slug: llm-redteam-showdown
+title: "I Attacked My Own AI Agent — Which Red-Team Tool Broke It First?"
+status: new            # new | in_production | published
+delivered: 2026-07-03
+lab: docker
+source: weekly-episode-storyboard
+deliverables:
+  storyboard: STORYBOARD.md
+  script: script.yaml
+  blog: POST.md
+  youtube: YOUTUBE.md
+  lab: lab/docker-compose.yml
+tools_under_test: [garak, pyrit, promptfoo]
+target: vulnerable-llm-agent

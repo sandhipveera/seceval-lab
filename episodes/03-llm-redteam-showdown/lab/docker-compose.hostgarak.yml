@@ -1,0 +1,26 @@
+# =============================================================================
+# BENIGN CANARY LAB — override that gives the GARAK attacker model egress.
+# -----------------------------------------------------------------------------
+# garak pulls its own detector models + probe datasets from Hugging Face at run
+# time; labnet is internal:true, so a labnet-only garak can't fetch them and
+# ends up with "No detectors, nothing to do" (empty results). This override
+# attaches garak to an extra NON-internal bridge (garak-egress) so it can pull
+# its models — exactly the same pattern as the PyRIT/Promptfoo attackers using
+# your OAuth CLI. Apply alongside the base compose:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.hostgarak.yml \
+#     --profile garak run --build --rm garak
+#
+# The vuln-agent, mock-llm and canary stay labnet-only (internal, no egress),
+# so the TARGET's data never leaves the host. Only the scanner reaches out, and
+# only to fetch public model/dataset weights.
+# =============================================================================
+networks:
+  garak-egress:
+    driver: bridge          # NOT internal -> lets garak pull its HF models/datasets
+
+services:
+  garak:
+    networks:
+      - labnet              # reach the vuln-agent (http://ep03-vuln-agent:8000/v1)
+      - garak-egress        # + egress for model/dataset downloads

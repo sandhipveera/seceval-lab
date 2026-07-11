@@ -8,13 +8,14 @@ fallbacks only). The weekly task pulls the next unchecked entry, delivers its pa
 
 - [x] 01 — MCP / agent security teardown: poisoned MCP server vs mcp-scan / Golf Scanner *(delivered)*
 - [x] 02 — "I beat the AI model scanner": picklescan 2025 bypasses vs ModelScan / ModelAudit / fickling *(delivered)*
-- [ ] 03 — LLM red-team showdown: Garak vs PyRIT vs Promptfoo
-- [ ] 04 — Prompt-injection firewalls: LLM Guard vs Vigil vs Rebuff vs Prompt Guard 2
+- [x] 03 — LLM red-team showdown: Garak vs PyRIT vs Promptfoo *(delivered)*
+- [x] 04 — Prompt-injection firewalls: LLM Guard vs Vigil vs Rebuff vs Prompt Guard 2 *(delivered)*
+- [x] 05 — LLM guardrail bypass: NeMo Guardrails vs Guardrails AI (emoji-smuggling / tokenizer-gap evasion) *(delivered — promoted from fallback F2)*
 
 ## Fallbacks (only if a fresher matchup slips — saturated / lower lab-fit)
 
-- [ ] F1 — AI SOC explainer / react: what an autonomous SOC analyst actually does
-- [ ] F2 — NeMo Guardrails vs Guardrails AI deep-dive (needs a novel test angle, e.g. a live bypass)
+- [ ] F1 — AI SOC explainer / react: what an autonomous SOC analyst actually does *(skipped for ep05: explainer/react format doesn't fit the head-to-head Docker + 7-criterion scorecard, and the "agentic SOC 2026" space is saturated with vendor guides)*
+- [x] F2 — NeMo Guardrails vs Guardrails AI deep-dive (needs a novel test angle, e.g. a live bypass) *(delivered as ep05 — fresh hook: 2025–26 emoji-smuggling / variation-selector evasion, ~100% ASR from guard/model tokenizer misalignment)*
 
 ## Notes for each build
 - Same fixed 7-criterion scorecard rubric (install 15%, detection/efficacy 30%, signal quality
