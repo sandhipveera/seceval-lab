@@ -2,8 +2,8 @@
 title: "I Attacked My Own AI Agent — Which Red-Team Tool Broke It First?"
 description: "A reproducible, Docker-based LLM red-team showdown. One deliberately vulnerable AI agent, one benign canary tool, three frameworks — Garak, PyRIT, and Promptfoo. What each broke, and what slipped past."
 tags: [AI security, LLM red teaming, agent security, prompt injection, jailbreak, tool misuse, blue-team]
-status: draft
-note: "PyRIT column filled from a real host run (tool_misuse ✅ 3 turns; jailbreak/injection ❌ 5 turns; 0 false successes; ~5 min; OAuth-billed). Key finding written up in the 'attacker that wouldn't attack' sidebar. STILL TO DO before publishing: (1) run Garak + Promptfoo (`docker compose --profile garak run --rm garak`, same for pyrit/promptfoo) and fill their [run pending] cells; (2) compute the weighted scorecard once all three are in; (3) set the pinned commit hash after push. Repo URL already set to github.com/sandhipveera/seceval-lab."
+status: ready
+note: "COMPLETE — all three frameworks run against the same MODE=stub vuln-agent (fair-test). PyRIT: real break on multi-turn tool_misuse (3 turns, canary fired; 0 false successes; ~5 min; OAuth-billed) — 'attacker that wouldn't attack' sidebar. Garak: 0 real (3 mitigation-bypass detector artifacts; DAN detector passed 127/127), tool-misuse untested; run via egress-bridge override. Promptfoo: 0/40 (iterative jailbreak strategies SaaS-gated), host-run with OAuth-CLI generator. Weighted scorecard: PyRIT 7.7, Promptfoo 7.6, Garak 6.9. Pinned commit 75b5f53. Repo github.com/sandhipveera/seceval-lab. Remaining before publish: push to GitHub (local commits only so far)."
 ---
 
 # I Attacked My Own AI Agent — Which Red-Team Tool Broke It First?
