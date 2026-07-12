@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LinkedIn Article — I Attacked My Own AI Agent</title>
+<style>
+  body { font: 17px/1.6 -apple-system, Segoe UI, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 30px; line-height: 1.25; }
+  h2 { font-size: 22px; margin-top: 32px; }
+  .imgnote { background:#f3f4f6; border:1px dashed #9aa4b2; padding:14px 16px; border-radius:8px; color:#334155; font-size:15px; }
+  .side { background:#eef2ff; border-left:4px solid #6366f1; padding:14px 18px; border-radius:6px; margin:24px 0; }
+  ul { padding-left: 22px; }
+  .disc { font-size: 14px; color:#475569; border-top:1px solid #e2e8f0; margin-top:32px; padding-top:16px; }
+</style>
+</head>
+<body>
+
+<h1>I Attacked My Own AI Agent &mdash; Which Red-Team Tool Broke It First?</h1>
+
+<p>The scary thing about an AI agent isn&rsquo;t that it can be jailbroken into saying something rude &mdash; it&rsquo;s that it holds <em>tools</em>. It can fetch a URL, read a file, call an API. So the question that actually matters for anyone shipping one is: if an attacker talks my agent into <strong>misusing its tools</strong>, would the red-team framework I bought catch it before an auditor does? I built one deliberately weak agent, gave it a single benign <strong>canary</strong> tool, and pointed three of the best-known LLM red-team frameworks at it &mdash; <strong>Garak, PyRIT, and Promptfoo</strong> &mdash; on the exact same target, to see which one broke it first.</p>
+
+<p>Everything runs locally in Docker. The target agent sits on an <code>internal</code> network with no egress; the only thing its tool can reach is an in-network canary sink. When the agent gets talked into firing that tool, the sink logs a hit &mdash; that hit is my ground truth that an attack actually landed, not a grader&rsquo;s opinion. The whole thing is reproducible at a pinned commit.</p>
+
+<p class="imgnote">[[ INSERT SCORECARD IMAGE HERE &mdash; assets/scorecard.png ]]</p>
+
+<h2>Three tools that do genuinely different jobs</h2>
+
+<p>It&rsquo;s tempting to treat these as three brands of the same product. They&rsquo;re not. <strong>Garak</strong> is the scanner &mdash; think &ldquo;Nessus for LLMs&rdquo;: one command, a big battery of single-turn probes, run it like a vulnerability scan. <strong>PyRIT</strong> (Microsoft) is a framework for building <em>multi-turn</em> attacks &mdash; it points a second, &ldquo;adversarial&rdquo; LLM at your target and lets it escalate turn by turn. <strong>Promptfoo</strong> is the declarative one &mdash; a config file, a plugin library, a polished report, built to live in CI. Same target, same scenarios; only the framework changes. That&rsquo;s the fair-test rule.</p>
+
+<h2>What each one actually broke</h2>
+
+<p>Here&rsquo;s the uncomfortable headline: on this agent, <strong>only PyRIT landed a real hit</strong>. Its multi-turn escalation talked the agent into misusing its tool &mdash; the canary fired after three turns &mdash; with <strong>zero false positives</strong>. That&rsquo;s the attack a single-turn scanner structurally cannot find, because it only exists across a conversation.</p>
+
+<p><strong>Garak</strong> reported three &ldquo;hits&rdquo; &mdash; and every one was a <strong>scoring artifact</strong>, not a real break. Its <code>mitigation.MitigationBypass</code> detector counted the agent&rsquo;s benign, generic replies as jailbreaks, while its own <code>dan.DAN</code> detector passed all 127 attempts on the same responses. When one detector says &ldquo;fully broken&rdquo; and another says &ldquo;fully resisted&rdquo; on the identical output, that&rsquo;s a false positive, and I flagged it as one. Garak&rsquo;s single-turn battery never exercised the tool-misuse path at all.</p>
+
+<p><strong>Promptfoo</strong> went 0 for 40: every generated attack was resisted. The catch is <em>why</em> &mdash; every one of its iterative jailbreak strategies (<code>composite</code>, <code>meta</code>) is gated behind Promptfoo&rsquo;s cloud generation service and simply refuses to run offline. So the strategies most likely to find the multi-turn break were the ones I couldn&rsquo;t run locally. Clean report, but a real blind spot to know about.</p>
+
+<div class="side">
+<strong>Sidebar &mdash; the attacker that wouldn&rsquo;t attack.</strong> PyRIT&rsquo;s multi-turn attacks need a second LLM to <em>invent</em> the jailbreaks. The obvious move is to plug in the best model you have &mdash; so I plugged in a frontier model via its OAuth CLI. It refused: &ldquo;I can&rsquo;t help craft questions meant to make an assistant abandon safety rules.&rdquo; The exact alignment that makes a model safe to ship makes it useless as a red-team engine. If you stand up PyRIT, budget for a <em>red-team-permitted</em> attacker model &mdash; don&rsquo;t assume your production frontier key will do the job.
+</div>
+
+<h2>Noise and cost</h2>
+
+<p>A framework that flags every refusal as a jailbreak trains you to ignore it, and none of these attacks are free. <strong>Garak</strong> was the most thorough and the longest-running &mdash; 15 probes, 3,632 attempts &mdash; and it&rsquo;s the one that produced false positives here. <strong>PyRIT</strong> was the most precise (~5 minutes, 0 false alarms) but the most engineering to drive. <strong>Promptfoo</strong> was the fastest route to a useful report (~6 minutes) but it leans on a judge model to grade success &mdash; you&rsquo;re trusting one model&rsquo;s opinion of whether another failed. Cheap and fast, worth a skeptical eye.</p>
+
+<h2>The scorecard and the verdict</h2>
+
+<p>Scored on the same seven-criterion rubric as every episode &mdash; install (15%), detection/efficacy (30%), signal quality (15%), performance (10%), usability (10%), docs (10%), value (10%):</p>
+
+<ul>
+  <li><strong>PyRIT &mdash; 7.7.</strong> The only framework that modeled a patient, multi-turn adversary and actually found the tool-misuse break &mdash; also the most work to stand up. Reach for it when you&rsquo;re serious about agent-specific attacks and have the engineers to compose it.</li>
+  <li><strong>Promptfoo &mdash; 7.6.</strong> Easiest install, cleanest report, best docs, most CI-friendly &mdash; held back only because its strongest iterative strategies are locked behind the cloud service. The one to make part of a team&rsquo;s daily workflow.</li>
+  <li><strong>Garak &mdash; 6.9.</strong> A fast, broad, scanner-style first read &mdash; great for &ldquo;where is this agent weak?&rdquo; Just remember a wide net and a deep one are different instruments; read its detector hits critically.</li>
+</ul>
+
+<p>For a real agent you&rsquo;d <strong>layer them</strong>: Promptfoo or Garak in CI to catch regressions cheaply on every change, and a periodic deep PyRIT red-team before anything ships &mdash; because the multi-turn, tool-misuse attacks that actually matter are the ones a fast scan will never surface.</p>
+
+<h2>Reproduce it yourself</h2>
+
+<p>Every number above comes from the lab run, reproducible at a pinned commit: <strong>github.com/sandhipveera/seceval-lab</strong> (@75b5f53). Same vulnerable agent, same canary tool, same attack configs for all three frameworks &mdash; all benign, isolated network, nothing leaves your machine. If your results diverge from mine, that&rsquo;s the point &mdash; tell me.</p>
+
+<p class="disc"><strong>Disclaimer.</strong> Independent security research for defensive and educational purposes only. Results reflect the behavior of the specific tool versions tested (garak 0.15.0, PyRIT driven by an OAuth-CLI attacker model, Promptfoo 0.121.18) in a single controlled, reproducible configuration against one deliberately vulnerable stub agent on a specific date. They are the author&rsquo;s observations and opinions from that setup &mdash; not a statement of fact about, nor a verdict on, any product&rsquo;s overall security, quality, or fitness for any purpose; different versions, configurations, models, or inputs may yield different results. In particular, a &ldquo;0 real breaks&rdquo; result for a framework is a property of <em>this</em> target and configuration, not a claim that the tool is ineffective. garak, PyRIT, Promptfoo, and all other product and company names are trademarks of their respective owners, referenced nominatively for identification and comparison only; their use does not imply any affiliation with, sponsorship by, or endorsement by those owners. I am not endorsing, and have no association with, any product in this study. Provided &ldquo;as is,&rdquo; without warranty of any kind and without liability. Every framework tested is a valuable security tool; the takeaway is to layer them. Spotted an inaccuracy? Open an issue on the repo and it will be corrected.</p>
+
+</body>
+</html>
