@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="627" viewBox="0 0 1200 627" font-family="DejaVu Sans, Arial, sans-serif">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#0A1120"/><stop offset="1" stop-color="#0F1B30"/>
+  </linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#F59E0B"/><stop offset="1" stop-color="#FCD34D"/>
+  </linearGradient>
+</defs>
+<rect width="1200" height="627" fill="url(#bg)"/>
+<rect x="0" y="0" width="1200" height="6" fill="#FB923C" opacity="0.95"/>
+
+<!-- Title -->
+<text x="60" y="70" fill="#F8FAFC" font-size="40" font-weight="700">LLM Red-Team Showdown &#8212; Scorecard</text>
+<text x="60" y="104" fill="#94A3B8" font-size="20">One deliberately vulnerable agent &#183; one benign canary tool &#183; same target, three frameworks</text>
+
+<!-- Cards -->
+<!-- PyRIT (winner) -->
+<rect x="60" y="140" width="345" height="300" rx="16" fill="#111C33" stroke="url(#gold)" stroke-width="3"/>
+<text x="84" y="184" fill="#FCD34D" font-size="15" font-weight="700" letter-spacing="1">BEST OVERALL</text>
+<text x="84" y="224" fill="#F8FAFC" font-size="30" font-weight="700">PyRIT</text>
+<text x="84" y="300" fill="#FCD34D" font-size="76" font-weight="800">7.7</text>
+<text x="300" y="300" fill="#64748B" font-size="22">/ 10</text>
+<text x="84" y="352" fill="#34D399" font-size="17" font-weight="700">&#9679; Only real break</text>
+<text x="84" y="380" fill="#CBD5E1" font-size="16">Multi-turn tool-misuse;</text>
+<text x="84" y="402" fill="#CBD5E1" font-size="16">canary fired, 0 false alarms.</text>
+<text x="84" y="424" fill="#94A3B8" font-size="14">Most work to stand up.</text>
+
+<!-- Promptfoo -->
+<rect x="428" y="140" width="345" height="300" rx="16" fill="#111C33" stroke="#25324A" stroke-width="2"/>
+<text x="452" y="184" fill="#94A3B8" font-size="15" font-weight="700" letter-spacing="1">EASIEST TO ADOPT</text>
+<text x="452" y="224" fill="#F8FAFC" font-size="30" font-weight="700">Promptfoo</text>
+<text x="452" y="300" fill="#E2E8F0" font-size="76" font-weight="800">7.6</text>
+<text x="668" y="300" fill="#64748B" font-size="22">/ 10</text>
+<text x="452" y="352" fill="#F87171" font-size="17" font-weight="700">&#10007; 0 / 40 attacks landed</text>
+<text x="452" y="380" fill="#CBD5E1" font-size="16">Cleanest report, best docs;</text>
+<text x="452" y="402" fill="#CBD5E1" font-size="16">top strategies cloud-gated.</text>
+<text x="452" y="424" fill="#94A3B8" font-size="14">The CI-friendly daily driver.</text>
+
+<!-- Garak -->
+<rect x="796" y="140" width="345" height="300" rx="16" fill="#111C33" stroke="#25324A" stroke-width="2"/>
+<text x="820" y="184" fill="#94A3B8" font-size="15" font-weight="700" letter-spacing="1">BROADEST SCAN</text>
+<text x="820" y="224" fill="#F8FAFC" font-size="30" font-weight="700">Garak</text>
+<text x="820" y="300" fill="#E2E8F0" font-size="76" font-weight="800">6.9</text>
+<text x="1036" y="300" fill="#64748B" font-size="22">/ 10</text>
+<text x="820" y="352" fill="#FBBF24" font-size="17" font-weight="700">&#9888; 3 false positives</text>
+<text x="820" y="380" fill="#CBD5E1" font-size="16">Detector artifacts, 0 real;</text>
+<text x="820" y="402" fill="#CBD5E1" font-size="16">tool-misuse never tested.</text>
+<text x="820" y="424" fill="#94A3B8" font-size="14">Fast, scanner-style first read.</text>
+
+<!-- Rubric strip -->
+<text x="60" y="486" fill="#64748B" font-size="15">Weighted rubric &#8212; install 15% &#183; detection 30% &#183; signal 15% &#183; performance 10% &#183; usability 10% &#183; docs 10% &#183; value 10%</text>
+
+<!-- Takeaway -->
+<rect x="60" y="506" width="1081" height="52" rx="10" fill="#152238"/>
+<text x="82" y="539" fill="#E2E8F0" font-size="19">No single winner &#8212; layer them: a fast scan (Garak/Promptfoo) in CI, a deep PyRIT red-team before you ship.</text>
+
+<!-- Footer -->
+<text x="60" y="596" fill="#64748B" font-size="15">github.com/sandhipveera/seceval-lab @75b5f53</text>
+<text x="1141" y="596" fill="#64748B" font-size="15" text-anchor="end">100% local &#183; benign canary &#183; reproducible</text>
+</svg>
