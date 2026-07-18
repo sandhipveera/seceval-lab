@@ -5,6 +5,17 @@
 # separate profile so only one guards the door per run — that's the fairness rule.
 name: ep04-pif-lab
 
+# Every firewall exposes GET /health. Compose waits on these (see `up --wait` in
+# scripts/run_firewall.sh) so the battery never fires before a guard is listening.
+# Without this, a slow-loading guard (llm-guard needs ~15-30s for its deberta model)
+# refuses the connection and the app fails OPEN -> a broken guard looks like a miss.
+x-guard-healthcheck: &guard-healthcheck
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+  interval: 5s
+  timeout: 5s
+  retries: 40
+  start_period: 15s
+
 networks:
   labnet:
     driver: bridge
@@ -49,14 +60,25 @@ services:
       - "./scripts:/scripts"
       - "./artifacts:/artifacts"
     # Overridden by `docker compose run` args; the default just prints usage.
-    entrypoint: ["python"]
-    command: ["-c", "print('ep04 runner: invoke via docker compose run --rm runner python replay.py <fw> <mode>')"]
+    # NOTE: deliberately NO `entrypoint:` here. The scripts invoke this as
+    #   docker compose run --rm runner python replay.py <fw> <mode>
+    # so the command must carry its own `python`. An entrypoint of ["python"]
+    # doubles it and fails with: can't open file '/scripts/python'.
+    command: ["python", "-c", "print('ep04 runner: invoke via docker compose run --rm runner python replay.py <fw> <mode>')"]
 
   # --- Firewalls under test. Exactly one profile is active per run (same target, same attacks). ---
 
   fw-prompt-guard-2:
-    build: ./firewalls/prompt-guard-2   # Meta Llama Prompt Guard 2 (86M/22M) binary classifier
+    # Meta Llama Prompt Guard 2 (86M/22M) binary classifier. The model repo is GATED on HF —
+    # accept the Llama license on the model page, then run with your token exported:
+    #   HF_TOKEN=hf_xxx docker compose --profile prompt-guard-2 up -d --build
+    # The token is used at BUILD time only (to bake the weights); runtime stays offline on labnet.
+    build:
+      context: ./firewalls/prompt-guard-2
+      args:
+        HF_TOKEN: "${HF_TOKEN:-}"
     container_name: ep04-fw-pg2
+    healthcheck: *guard-healthcheck
     networks: [labnet]
     profiles: ["prompt-guard-2"]
     environment:
@@ -66,18 +88,21 @@ services:
   fw-vigil:
     build: ./firewalls/vigil            # deadbits/vigil-llm: patterns + embedding similarity
     container_name: ep04-fw-vigil
+    healthcheck: *guard-healthcheck
     networks: [labnet]
     profiles: ["vigil"]
 
   fw-llm-guard:
     build: ./firewalls/llm-guard        # protectai/llm-guard PromptInjection input scanner
     container_name: ep04-fw-llmguard
+    healthcheck: *guard-healthcheck
     networks: [labnet]
     profiles: ["llm-guard"]
 
   fw-rebuff:
     build: ./firewalls/rebuff           # protectai/rebuff: heuristics + LLM + vector + canary tokens
     container_name: ep04-fw-rebuff
+    healthcheck: *guard-healthcheck
     networks: [labnet]
     profiles: ["rebuff"]
     environment:

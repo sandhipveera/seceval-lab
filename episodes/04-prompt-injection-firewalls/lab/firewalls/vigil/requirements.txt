@@ -1,5 +1,4 @@
+# Wrapper deps only. vigil itself is installed from the upstream repo clone in the
+# Dockerfile (git clone + pip install -e .), NOT from the PyPI name — the published
+# package has drifted from the repo. See NOTES.md.
 flask==3.0.3
-# vigil-llm: install from PyPI if your pin is published, else from the repo:
-#   pip install vigil-llm
-# or:  pip install "git+https://github.com/deadbits/vigil-llm@<pinned-sha>"
-vigil-llm

@@ -1,9 +1,10 @@
 ---
-title: "I Smuggled a Prompt Injection Past 4 AI Firewalls — Which One Caught It?"
-description: "A reproducible, Docker-based teardown of prompt-injection firewalls. One vulnerable LLM app, one escalating injection battery, four defenses — LLM Guard, Vigil, Rebuff, and Meta's Prompt Guard 2. What each caught, and what slipped through."
+title: "I Tested 4 AI Prompt-Injection Firewalls — Only 2 Would Even Run"
+description: "A reproducible, Docker-based teardown of prompt-injection firewalls. One vulnerable LLM app, one escalating injection battery, four defenses — LLM Guard, Rebuff, Vigil, and Meta's Prompt Guard 2. Two never started (a gated model and dependency rot); of the two that ran, both caught every attack but only one is deployable."
 tags: [AI security, prompt injection, LLM security, guardrails, prompt-injection firewall, blue-team]
-status: draft
-note: "Numbers marked [FILL] come from your real lab run (artifacts/findings.csv + metrics). Replace before publishing."
+status: ready
+note: "COMPLETE from a real lab run. Evaluated: LLM Guard 8.1 (caught 6/6, 33% FP, 449ms) and Rebuff 6.7 (caught 6/6 but 67% FP, 3.7s). NOT evaluated: Prompt Guard 2 (Meta Llama gate pending) and Vigil (won't build offline — 6 documented blockers, lab/firewalls/vigil/NOTES.md). Lab bugs fixed this run: doubled-python entrypoint, startup race (added healthchecks + --wait), vigil dep conflicts, non-profile teardown, false_positive_test starting on the un-buildable pg2, and an integrity guard so an all-error run reads NOT EVALUATED not 'caught 0/N'. Remaining: push + set pinned commit."
+alt_titles: ["4 AI Prompt-Injection Firewalls vs 1 Vulnerable Agent — Only 2 Made It to the Test", "Which Prompt-Injection Firewall Should Guard Your LLM? I Could Only Get 2 of 4 to Run"]
 ---
 
 # I Smuggled a Prompt Injection Past 4 AI Firewalls — Which One Caught It?
@@ -17,7 +18,7 @@ at a time — LLM Guard, Vigil, Rebuff, and Meta's brand-new Prompt Guard 2. Sam
 Can any of them actually stop it?
 
 Everything below runs locally in Docker on an isolated network with no internet egress, the payloads
-are benign canaries, and the whole setup is reproducible from [the repo](https://github.com/<you>/seceval-lab)
+are benign canaries, and the whole setup is reproducible from [the repo](https://github.com/sandhipveera/seceval-lab)
 at a pinned commit. If your results differ from mine, that's the point — tell me.
 
 ## Why "prompt-injection firewall" is the hottest AI defense of 2026
@@ -94,10 +95,13 @@ drop-in gate you can afford to run on every request.
 | Setup | Prompt Guard 2 | Vigil | LLM Guard | Rebuff |
 |---|---|---|---|---|
 | Approach | Binary classifier | Patterns + embeddings | Fine-tuned scanner (toolkit) | Heuristics + LLM + vector + canary |
-| License | [FILL] | [FILL] | [FILL] | [FILL] |
-| Install time | [FILL] | [FILL] | [FILL] | [FILL] |
-| Footprint (model / deps) | [FILL] | [FILL] | [FILL] | [FILL] |
-| Inspects indirect (doc/tool) input | [FILL] | [FILL] | [FILL] | [FILL] |
+| License | Llama Community (gated) | Apache-2.0 | MIT | Apache-2.0 |
+| Stood up in a clean offline container? | ❌ gated¹ | ❌ won't start² | ✅ | ✅ |
+| Install / footprint | not evaluated¹ | not evaluated² | pip + baked deberta PromptInjection model (torch) | pip, offline heuristics + vector (no model) |
+| Inspects indirect (doc/tool) input | not evaluated | not evaluated | ✅ (caught the poisoned-doc L3) | ✅ (caught the poisoned-doc L3) |
+
+¹ **Prompt Guard 2 — not evaluated.** The model repo is gated behind Meta's Llama Community License; the access request was still *pending* at publish time, so the image can't bake the weights. A firewall you can't obtain without waiting on a vendor's approval is itself a finding.
+² **Vigil — not evaluated.** Could not be stood up in a clean offline container after three attempts and six distinct blockers (unscaffolded config, missing YARA system lib, wrong install path, a `sentence-transformers`/`huggingface_hub` conflict, an nltk fetch-at-import, and a VectorDB constructed unconditionally at startup). Full chain in `lab/firewalls/vigil/NOTES.md`. We do **not** report catch/miss numbers for a guard that never started.
 
 ## Round 2 — The injection battery, and what each one caught
 
@@ -121,11 +125,13 @@ I normalized every verdict into a single CSV so the comparison is honest and rep
 
 | Detection (caught = ✅ / missed = ❌) | Prompt Guard 2 | Vigil | LLM Guard | Rebuff |
 |---|---|---|---|---|
-| L1 — plain direct injection | [FILL] | [FILL] | [FILL] | [FILL] |
-| L2 — spaced / homoglyph obfuscation | [FILL] | [FILL] | [FILL] | [FILL] |
-| L2 — base64-encoded payload | [FILL] | [FILL] | [FILL] | [FILL] |
-| L3 — indirect (poisoned document) | [FILL] | [FILL] | [FILL] | [FILL] |
-| Canary fired (attack succeeded) | [FILL] | [FILL] | [FILL] | [FILL] |
+| L1 — plain direct injection | — n/e | — n/e | ✅ | ✅ |
+| L2 — spaced / homoglyph obfuscation | — n/e | — n/e | ✅ | ✅ |
+| L2 — base64-encoded payload | — n/e | — n/e | ✅ | ✅ |
+| L3 — indirect (poisoned document) | — n/e | — n/e | ✅ | ✅ |
+| Canary fired (attack succeeded) | — n/e | — n/e | ❌ 0/6 | ❌ 0/6 |
+
+*(n/e = not evaluated; see the two footnotes above.)* Both guards that actually ran caught **all six** attacks — plain, spaced, homoglyph, base64, and the indirect poisoned-document. On detection alone they look identical. They are not — which is what Round 3 exposes.
 
 The pattern I expect from the research — and which the lab is designed to confirm or refute — is that
 the plain attack is universally caught, the obfuscated variants open real gaps, and indirect
@@ -150,38 +156,48 @@ its LLM-based check.
 
 | Cost | Prompt Guard 2 | Vigil | LLM Guard | Rebuff |
 |---|---|---|---|---|
-| False positives on benign set | [FILL] | [FILL] | [FILL] | [FILL] |
-| Added latency per call (p50) | [FILL] | [FILL] | [FILL] | [FILL] |
-| Extra model call on escalation | [FILL] | [FILL] | [FILL] | [FILL] |
+| False positives on benign set | — n/e | — n/e | ⚠️ 2/6 (33%) | ❌ 4/6 (67%) |
+| Added latency per call (p50) | — n/e | — n/e | 449 ms | 3,672 ms |
+| Added latency (p95) | — n/e | — n/e | 4,698 ms | 8,028 ms |
+| Extra model call on escalation | — n/e | — n/e | no (single classifier pass) | no in offline mode (would, if `LLM_API_KEY` set) |
+
+This is where the tie breaks, hard. Both caught every attack — but **Rebuff over-blocked two-thirds of the benign-but-scary prompts** (harmless text containing words like "ignore" or "password reset"), against LLM Guard's third. And it did so **~8× slower**: a 3.7-second p50, peaking near 9 seconds on the indirect doc, versus LLM Guard's 0.45s. A guard that blocks 67% of innocent traffic at 3.7 seconds a call isn't a firewall — it's a denial-of-service on your own users. Baseline, for reference: **5.8 ms** with no guard at all.
 
 ## The scorecard and the verdict
 
-Scored on the same seven-criterion rubric as every episode — install, detection, signal quality,
-performance, usability, docs, value. Weighted totals: Prompt Guard 2 [FILL], Vigil [FILL], LLM Guard
-[FILL], Rebuff [FILL].
+The plan was four firewalls. **Two of them never made it to the starting line** — and that is the
+first, unglamorous finding of this episode. Prompt Guard 2 sits behind Meta's Llama license with an
+approval that hadn't come through; Vigil couldn't be stood up in a clean offline container after three
+rounds of dependency surgery. For a piece about *practical* defenses, "half the best-known field
+won't install cleanly" is not a gap in the test — it's the part vendors never put on the slide.
 
-There's no single winner, and the four aren't really the same product:
+For the two that ran, scored on the same seven-criterion rubric as every episode — install (15%),
+detection/efficacy (30%), signal quality (15%), performance (10%), usability (10%), docs (10%), value
+(10%). Weighted totals: **LLM Guard 8.1, Rebuff 6.7** (out of 10). Prompt Guard 2 and Vigil are
+**unscored — not evaluated.**
 
-- **Reach for Prompt Guard 2** when you want a tiny, fast gate you can afford to run on every request
-  — the lowest-friction way to stop the obvious attacks.
-- **Reach for LLM Guard** when you want a whole toolkit — input *and* output scanning, PII, secrets,
-  toxicity, not just injection — and you can pay for the weight.
-- **Reach for Rebuff** when you want defense in depth, and especially its canary tokens, which can
-  catch a leak the classifier missed entirely.
-- **Reach for Vigil** when you want a clean, hackable middle ground and the ability to see and tune
-  exactly why something fired.
+The two aren't the same product, and the gap between them is the whole lesson:
 
-But the honest headline from this year's research is the one nobody's selling: a single classifier is
-a speed bump, not a wall. Obfuscation beats pattern-matching, distribution shift beats benchmark
-scores, and indirect injection beats any guard that only watches the user's turn. So you layer them —
-a fast classifier at the door, output-side checks behind the model, canary tokens to catch what
-slips, and least-privilege so a successful injection can't reach anything worth stealing. The firewall
-is never allowed to be your only line.
+- **Reach for LLM Guard.** It caught all six attacks, over-blocked the *least* (33%), and did it in
+  ~0.45s — and it's a whole toolkit (input *and* output scanning, PII, secrets, toxicity), not just an
+  injection gate. The one I'd actually put in front of a production app here.
+- **Approach Rebuff carefully.** It also caught all six — but by blocking two-thirds of harmless
+  prompts at ~3.7 seconds each. Its genuinely novel idea is **canary tokens** (detecting a leak even
+  when the classifier misses), but in this lab's offline configuration its heuristics are so
+  trigger-happy they'd wreck the user experience. Tune it hard, or run only the canary layer.
+
+And the honest headline the research keeps pointing at: a single classifier is a speed bump, not a
+wall. On detection alone, both survivors looked perfect and identical — it took the *false-positive*
+and *latency* tests to tell a usable defense from a self-inflicted outage, and it took a real build to
+discover that two of the four don't even run. So you layer them — a fast, low-false-positive classifier
+at the door, output-side checks behind the model, canary tokens to catch what slips, and
+least-privilege so a successful injection can't reach anything worth stealing. The firewall is never
+allowed to be your only line — and it's never as easy to deploy as the README claims.
 
 ## Reproduce it yourself
 
 Every number above comes from the lab run, and the whole thing is reproducible from
-[the repo](https://github.com/<you>/seceval-lab) at commit `[FILL]` — same vulnerable app, same
+[the repo](https://github.com/sandhipveera/seceval-lab) at commit `[FILL]` — same vulnerable app, same
 injection battery, same firewall commands. It's all benign: the "exfil" trips a canary on an isolated
 network, so you can safely run it and see where your results diverge. Given how sensitive these
 classifiers are to exact inputs and versions, I'd genuinely expect some of your numbers to differ

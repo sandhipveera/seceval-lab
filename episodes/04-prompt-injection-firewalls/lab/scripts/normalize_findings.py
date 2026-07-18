@@ -51,8 +51,20 @@ def main():
         if not data or "results" not in data:
             rows.append(_row(name, note_variant="[missing/unreadable artifact]"))
             continue
+        # INTEGRITY GUARD: if every verdict is "error", the guard never answered —
+        # the app fails OPEN, so each attack looks like a miss. That is a BROKEN
+        # CONTAINER, not a finding. Record it as NOT EVALUATED instead of emitting
+        # rows that read "caught 0/N". (Ep.04: this is exactly how vigil failed.)
+        results = data.get("results", []) or []
+        if results and all(str(r.get("label", "")).lower() == "error" for r in results):
+            rows.append(_row(name, level="[NOT EVALUATED]",
+                             note_variant="guard never started — all verdicts 'error' "
+                                          "(app failed open; not a miss)"))
+            seen.add(name)
+            continue
+
         seen.add(name)
-        for r in data.get("results", []):
+        for r in results:
             rows.append(_row(
                 name,
                 level=r.get("level", ""),
