@@ -197,7 +197,7 @@ allowed to be your only line — and it's never as easy to deploy as the README 
 ## Reproduce it yourself
 
 Every number above comes from the lab run, and the whole thing is reproducible from
-[the repo](https://github.com/sandhipveera/seceval-lab) at commit `[FILL]` — same vulnerable app, same
+[the repo](https://github.com/sandhipveera/seceval-lab) at commit `98f511f` — same vulnerable app, same
 injection battery, same firewall commands. It's all benign: the "exfil" trips a canary on an isolated
 network, so you can safely run it and see where your results diverge. Given how sensitive these
 classifiers are to exact inputs and versions, I'd genuinely expect some of your numbers to differ
