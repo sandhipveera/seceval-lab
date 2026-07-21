@@ -1,0 +1,85 @@
+# Episode 05 lab — LLM guardrail bypass teardown. 100% local Docker, isolated, NO internet egress.
+# Brings up: a deliberately vulnerable chatbot holding a BENIGN canary secret, a guardrail service
+# (NeMo Guardrails or Guardrails AI, selected per run), and an attack runner that fires the same
+# jailbreak three ways (plain / character-injection / emoji-smuggled). The canary leaking = the
+# attack got through that guardrail. Nothing sensitive; nothing leaves the host.
+name: ep05-guardrail-lab
+
+# Shared healthcheck for the guard proxies (fail-safe against the Ep.04 startup race: never let a
+# guard that isn't up yet get counted as "passed the attack").
+x-guard-healthcheck: &guard-healthcheck
+  test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8080/health').read()"]
+  interval: 5s
+  timeout: 4s
+  retries: 20
+  start_period: 60s
+
+networks:
+  labnet:
+    driver: bridge
+    internal: true        # <-- no route to the internet. Nothing actually exfiltrates.
+
+services:
+  # Deliberately vulnerable chatbot: a benign canary string lives in its system prompt and it is
+  # instructed never to reveal it. If a reply contains the canary, the jailbreak worked.
+  target-chatbot:
+    build: ./target
+    container_name: ep05-target
+    networks: [labnet]
+    environment:
+      CANARY: "CANARY-LAB-5-9F3A"      # benign tripwire only; NOT a real secret
+      MODE: "stub"                       # deterministic local model stub; set "live" + LLM_API_KEY for a real model
+      # LLM_API_KEY: ""                  # only used when MODE=live
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read()"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 15s
+
+  # Guardrail under test — NeMo Guardrails. Enable with: docker compose --profile nemo up
+  guard-nemo:
+    build: ./guard-nemo
+    container_name: ep05-guard-nemo
+    networks: [labnet]
+    profiles: ["nemo"]
+    depends_on:
+      target-chatbot: { condition: service_healthy }
+    environment:
+      UPSTREAM: "http://ep05-target:8080/chat"
+      CANARY: "CANARY-LAB-5-9F3A"
+      CONFIG: "/app/config"             # Colang + config.yml rails (input, dialog, output, jailbreak)
+    healthcheck: *guard-healthcheck
+
+  # Guardrail under test — Guardrails AI. Enable with: docker compose --profile guardrails up
+  # Build needs a Hub token:  docker compose build --build-arg GUARDRAILS_TOKEN=xxxx guard-guardrails
+  guard-guardrails:
+    build:
+      context: ./guard-guardrails
+      args:
+        GUARDRAILS_TOKEN: "${GUARDRAILS_TOKEN:-}"
+    container_name: ep05-guard-guardrails
+    networks: [labnet]
+    profiles: ["guardrails"]
+    depends_on:
+      target-chatbot: { condition: service_healthy }
+    environment:
+      UPSTREAM: "http://ep05-target:8080/chat"
+      CANARY: "CANARY-LAB-5-9F3A"
+      VALIDATORS: "detect-jailbreak,detect-prompt-injection"   # pulled from the Guardrails Hub
+    healthcheck: *guard-healthcheck
+
+  # Attack runner: idle container; the run_*.sh scripts exec run.py inside it with the right
+  # LABEL / HIT_URL / OUTFILE. Writes raw JSON into ./artifacts (bind-mounted).
+  attack-runner:
+    build: ./attack-runner
+    container_name: ep05-attacker
+    networks: [labnet]
+    depends_on:
+      target-chatbot: { condition: service_healthy }
+    volumes:
+      - ./artifacts:/artifacts
+    environment:
+      TARGET_URL: "http://ep05-target:8080/chat"
+      VARIANTS: "plain,charinject,emoji"
+      CANARY: "CANARY-LAB-5-9F3A"

@@ -1,0 +1,121 @@
+# Machine-readable twin of STORYBOARD.md — drives voiceover, recording, captions.
+# Narration text is identical to the storyboard.
+episode:
+  number: 5
+  slug: llm-guardrail-bypass
+  title: "I Hid a Jailbreak Inside an Emoji — Which AI Guardrail Caught It?"
+  resolution: "1920x1080"
+  fps: 30
+  lab: docker
+
+voice:
+  provider: elevenlabs
+  voice_id: "${ELEVENLABS_VOICE_ID}"
+  model_id: "eleven_multilingual_v2"
+  stability: 0.45
+  similarity_boost: 0.80
+  style: 0.0
+  speed: 1.0
+
+scenes:
+  - id: s1_cold_open
+    narration: >-
+      Here's a jailbreak that shouldn't work anymore. I typed a request an AI is trained to refuse
+      — and its guardrail caught it instantly. Then I hid the exact same request inside an emoji,
+      and the guardrail waved it straight through to the model. That's not a clever prompt; it's a
+      gap between two tokenizers. I put a benign secret behind a guarded chatbot and asked two of
+      the biggest open-source AI guardrails — NVIDIA's NeMo Guardrails and Guardrails AI — one
+      question: can you still catch an attack once it's wearing a disguise? No marketing — just
+      what each one blocked.
+    action: { type: browser, url: "file://${ASSETS}/title_cold_open.html", duration_hint: 30 }
+
+  - id: s2_category
+    narration: >-
+      Quick context. As soon as we started putting language models in front of customers, we
+      bolted on guardrails — a filter that sits between the user and the model and blocks the
+      obviously bad stuff: jailbreaks, prompt injection, toxic content. In 2026 that filter is
+      everywhere, and it's usually a small classifier model making a fast yes-or-no call. But
+      here's the catch researchers exposed this year: that classifier runs its own tokenizer
+      before it decides, and that tokenizer doesn't always see text the same way the big model
+      does. When those two disagree, you get a blind spot — and a whole new attack surface that
+      lives in the gap between the guard and the thing it's guarding.
+    action: { type: browser, url: "file://${ASSETS}/guardrail_gap.html", duration_hint: 60 }
+
+  - id: s3_threat
+    narration: >-
+      So how do you attack a blind spot? You write a prompt the model reads perfectly but the
+      guard reads as gibberish. The cleanest version is emoji smuggling: you tuck your instructions
+      between Unicode variation selectors — invisible modifier characters meant to tweak how an
+      emoji looks. The guard's tokenizer strips them and sees an innocent emoji; the model
+      reconstructs the hidden text and follows it. Same idea with zero-width spaces and homoglyphs
+      — letters that look identical but carry different code points. Researchers reported these
+      tricks pushing attack success rates to nearly one hundred percent against major guardrails.
+      No exploit code, no CVE — just characters most systems were never taught to expect.
+    action: { type: browser, url: "file://${ASSETS}/emoji_smuggling.html", duration_hint: 60 }
+
+  - id: s4_lab_rules
+    narration: >-
+      Here's the setup, and fairness is the whole point. Everything runs locally in Docker on one
+      isolated network with no path to the internet. I stand up a deliberately vulnerable chatbot
+      with a benign secret in its system prompt — a canary string it's told never to reveal — and
+      put a guardrail in front of it. Then I fire the same attack three ways: the plain jailbreak,
+      a character-injection version, and the emoji-smuggled version. The canary leaking is my
+      ground truth that the attack got through. Same app, same secret, same three payloads — the
+      only variable is which guardrail is doing the guarding.
+    action: { type: terminal, cast: "lab_bringup", duration_hint: 60 }
+
+  - id: s5_setup_coverage
+    narration: >-
+      Round one — getting each guardrail running and seeing what it actually inspects. NeMo
+      Guardrails is NVIDIA's programmable framework: you write rails in a little language called
+      Colang, and it can check inputs, dialog, and outputs, with a dedicated jailbreak-detection
+      rail. Guardrails AI takes a different shape — a library of composable validators you pull
+      from its Hub, including detectors for jailbreak and prompt injection that you wrap around the
+      model's input and output. One is a conversation framework, the other a validator toolkit.
+      Install times and exactly what each one guards are on screen; full commands are in the repo.
+    action: { type: terminal, cast: "guardrail_setup", duration_hint: 90 }
+
+  - id: s6_detection
+    narration: >-
+      Now the real test. I send the plain jailbreak first, and both guardrails do their job — this
+      is the easy case they're built for, and the better-tuned one flagged it with the rule it
+      matched. Then I turn on the disguise. I run the character-injection version, then the
+      emoji-smuggled one, and watch whether each guard still sees the attack or passes it to the
+      model untouched. The moment a canary string comes back in the reply, that guard missed it. I
+      normalized every result — plain, character-injection, emoji — into one table so it's
+      genuinely apples to apples. Here's who caught what, and where the disguise won.
+    action: { type: terminal, cast: "detection_run", duration_hint: 150 }
+
+  - id: s7_noise_cost
+    narration: >-
+      Detection isn't the whole story. A guard that blocks every message trains your users to hate
+      it, so I also measured false positives on a set of perfectly normal prompts, plus the
+      latency each one adds to every single request. NeMo Guardrails does more — multiple rails,
+      dialog awareness — and that costs milliseconds and memory on each call. Guardrails AI's
+      validators are lighter but only as strong as the ones you choose to switch on. Here's the
+      added latency and the false-positive count for each, measured under the same load.
+    action: { type: browser, url: "file://${ASSETS}/metrics.html", duration_hint: 75 }
+
+  - id: s8_scorecard
+    narration: >-
+      Same rubric every episode — install, detection, signal quality, performance, usability,
+      docs, and value. And there's no single winner. Reach for NeMo Guardrails when you want
+      programmable, multi-layer control and you're already in the NVIDIA ecosystem — the dialog
+      rails catch things a single classifier can't. Reach for Guardrails AI when you want
+      lightweight, composable validators you can drop into an existing app in an afternoon. But the
+      honest headline is the one neither vendor prints: any guardrail that leans on a classifier
+      can be blindsided by input its tokenizer doesn't understand, so you normalize and sanitize
+      text before it ever reaches the guard — strip the invisible characters, then let the
+      guardrail do its job.
+    action: { type: browser, url: "file://${ASSETS}/scorecard.html", duration_hint: 105 }
+
+  - id: s9_outro
+    narration: >-
+      Everything here is reproducible — the vulnerable chatbot, the canary secret, the three
+      attack variants, down to the commit hash. It's all benign: the 'secret' is just a canary
+      token on an isolated network, so nothing real leaks and you can safely run it yourself and
+      tell me if your guardrails hold up better than mine. Next episode I move upstream to the AI
+      supply chain and put model-signing and provenance tools to the test — can you actually prove
+      the model you're running is the one you think it is? If that sounds like your kind of
+      trouble, subscribe, and I'll see you in the lab.
+    action: { type: browser, url: "file://${ASSETS}/outro.html", duration_hint: 60 }

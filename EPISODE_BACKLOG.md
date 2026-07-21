@@ -10,7 +10,7 @@ fallbacks only). The weekly task pulls the next unchecked entry, delivers its pa
 - [x] 02 — "I beat the AI model scanner": picklescan 2025 bypasses vs ModelScan / ModelAudit / fickling *(delivered)*
 - [x] 03 — LLM red-team showdown: Garak vs PyRIT vs Promptfoo *(delivered)*
 - [x] 04 — Prompt-injection firewalls: LLM Guard vs Vigil vs Rebuff vs Prompt Guard 2 *(delivered)*
-- [x] 05 — LLM guardrail bypass: NeMo Guardrails vs Guardrails AI (emoji-smuggling / tokenizer-gap evasion) *(delivered — promoted from fallback F2)*
+- [~] 05 — LLM guardrail bypass: NeMo Guardrails vs Guardrails AI (emoji-smuggling / tokenizer-gap evasion) *(IN PRODUCTION — scaffolded: storyboard/script/lab-contract done, but containers not built, lab not run, scorecard still [FILL], no finalize commit. Promoted from fallback F2.)*
 
 ## Fallbacks (only if a fresher matchup slips — saturated / lower lab-fit)
 
@@ -35,7 +35,7 @@ Three interchangeable fuel sources feed it, so the series doesn't run dry when t
 case-study stream. Plus an evergreen repurposing lane once the catalog ages.
 
 ### A. Product matchups (next up)
-- [x] 06 — AI gateway / LLM-proxy security: LiteLLM guardrails vs Portkey vs Bifrost *(delivered — promoted into the active slate over fallback F1. Fresh hook: the gateway became the attack surface in 2026 — LiteLLM PyPI supply-chain compromise (Mar, ~40 min window) + CVE-2026-42208 pre-auth SQLi, CVSS 9.3, CISA KEV in May; Portkey fully open-sourced (Mar) then Palo Alto acquisition intent (Apr). Cloudflare AI Gateway **cut**: hosted SaaS, can't run no-egress without breaking the fair-test rule. Adds a second axis — read-only posture checks on the gateway itself, no exploits shipped)*
+- [~] 06 — AI gateway / LLM-proxy security: LiteLLM guardrails vs Portkey vs Bifrost *(SCAFFOLDED, not yet run/finalized — promoted into the active slate over fallback F1. Fresh hook: the gateway became the attack surface in 2026 — LiteLLM PyPI supply-chain compromise (Mar, ~40 min window) + CVE-2026-42208 pre-auth SQLi, CVSS 9.3, CISA KEV in May; Portkey fully open-sourced (Mar) then Palo Alto acquisition intent (Apr). Cloudflare AI Gateway **cut**: hosted SaaS, can't run no-egress without breaking the fair-test rule. Adds a second axis — read-only posture checks on the gateway itself, no exploits shipped)*
 - [ ] 07 — Commercial AI firewalls: Lakera Guard vs Prompt Security vs Protect AI Guardian vs Robust Intelligence *(use self-host / trial tiers; some are SaaS-gated — flag like Promptfoo)*
 - [ ] 08 — PII / secrets redaction before the model: Microsoft Presidio vs LLM Guard Anonymize vs Nightfall vs Private-AI
 - [ ] 09 — Model provenance / signing / AI-SBOM: Sigstore model signing vs CycloneDX-ML vs safetensors + model cards

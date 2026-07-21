@@ -1,0 +1,15 @@
+episode: 05
+slug: llm-guardrail-bypass
+title: "I Hid a Jailbreak Inside an Emoji — Which AI Guardrail Caught It?"
+status: new            # new | in_production | published
+delivered: 2026-07-10
+lab: docker
+source: weekly-episode-storyboard
+deliverables:
+  storyboard: STORYBOARD.md
+  script: script.yaml
+  blog: POST.md
+  youtube: YOUTUBE.md
+  lab: lab/docker-compose.yml
+tools_under_test: [nemo-guardrails, guardrails-ai]
+target: vulnerable-llm-app
