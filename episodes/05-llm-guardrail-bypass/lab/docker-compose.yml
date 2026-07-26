@@ -69,6 +69,29 @@ services:
       VALIDATORS: "detect-jailbreak,detect-prompt-injection"   # pulled from the Guardrails Hub
     healthcheck: *guard-healthcheck
 
+  # Guardrail under test — Meta Llama Guard 4 (safety classifier). Enable with:
+  #   docker compose --profile llamaguard up
+  # GATED model: accept the license on HF and build with a token:
+  #   HF_TOKEN=hf_xxx docker compose build guard-llamaguard
+  # For a laptop-feasible run, override to a smaller family member:
+  #   LLAMAGUARD_MODEL=meta-llama/Llama-Guard-3-1B HF_TOKEN=hf_xxx docker compose build guard-llamaguard
+  guard-llamaguard:
+    build:
+      context: ./guard-llamaguard
+      args:
+        HF_TOKEN: "${HF_TOKEN:-}"
+        LLAMAGUARD_MODEL: "${LLAMAGUARD_MODEL:-meta-llama/Llama-Guard-4-12B}"
+    container_name: ep05-guard-llamaguard
+    networks: [labnet]
+    profiles: ["llamaguard"]
+    depends_on:
+      target-chatbot: { condition: service_healthy }
+    environment:
+      UPSTREAM: "http://ep05-target:8080/chat"
+      CANARY: "CANARY-LAB-5-9F3A"
+      LLAMAGUARD_MODEL: "${LLAMAGUARD_MODEL:-meta-llama/Llama-Guard-4-12B}"
+    healthcheck: *guard-healthcheck
+
   # Attack runner: idle container; the run_*.sh scripts exec run.py inside it with the right
   # LABEL / HIT_URL / OUTFILE. Writes raw JSON into ./artifacts (bind-mounted).
   attack-runner:

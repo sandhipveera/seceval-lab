@@ -30,7 +30,7 @@ def load_fp():
 def main():
     fp_by_guard = load_fp()
     rows, warnings = [], []
-    for name in ("baseline", "nemo", "guardrails"):
+    for name in ("baseline", "nemo", "guardrails", "llamaguard"):
         path = ART / f"{name}.json"
         if not path.exists():
             continue

@@ -42,6 +42,7 @@ measure () {   # $1 = profile/label, $2 = guard container, $3 = guard url
 
 measure nemo       ep05-guard-nemo        "http://ep05-guard-nemo:8080/chat"
 measure guardrails ep05-guard-guardrails  "http://ep05-guard-guardrails:8080/chat"
+measure llamaguard ep05-guard-llamaguard  "http://ep05-guard-llamaguard:8080/chat"
 
 docker compose down --remove-orphans >/dev/null 2>&1 || true
 echo "wrote $OUT"; cat "$OUT"
