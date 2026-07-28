@@ -1,7 +1,7 @@
 episode: 04
 slug: prompt-injection-firewalls
 title: "I Smuggled a Prompt Injection Past 4 AI Firewalls — Which One Caught It?"
-status: new            # new | in_production | published
+status: published            # new | in_production | published
 delivered: 2026-07-03
 lab: docker
 source: weekly-episode-storyboard

@@ -15,7 +15,8 @@ BASE_LAT=$(echo "$BASE" | python3 -c "import sys,json;print(json.load(sys.stdin)
 
 measure () {   # $1 = profile/label, $2 = guard container, $3 = guard url
   local NAME="$1" CONT="$2" URL="$3"
-  docker compose --profile "$NAME" up -d --build --wait target-chatbot "$CONT" attack-runner >/dev/null 2>&1 || {
+  local SVC="guard-$NAME"   # compose `up` needs the SERVICE name (guard-nemo), not container_name
+  docker compose --profile "$NAME" up -d --build --wait target-chatbot "$SVC" attack-runner >/dev/null 2>&1 || {
     echo "$NAME,,,,,ERROR,ERROR" >> "$OUT"; docker compose --profile "$NAME" down --remove-orphans >/dev/null 2>&1; return; }
 
   # Sample peak memory of the guard while the benign probe runs.
@@ -42,7 +43,14 @@ measure () {   # $1 = profile/label, $2 = guard container, $3 = guard url
 
 measure nemo       ep05-guard-nemo        "http://ep05-guard-nemo:8080/chat"
 measure guardrails ep05-guard-guardrails  "http://ep05-guard-guardrails:8080/chat"
-measure llamaguard ep05-guard-llamaguard  "http://ep05-guard-llamaguard:8080/chat"
+# Llama Guard 4 runs HOST-SIDE on Metal (Docker on macOS is CPU-only), not in-container — so we do
+# NOT build/measure the 24GB llamaguard container here. Its metrics come from the host leg; when the
+# host classifier errored (NOT EVALUATED), record ERROR to match findings. (Ep.05 host-side note.)
+if [ "${HOST_LLAMAGUARD:-1}" = "1" ]; then
+  echo "llamaguard,,,,,ERROR,ERROR" >> "$OUT"
+else
+  measure llamaguard ep05-guard-llamaguard  "http://ep05-guard-llamaguard:8080/chat"
+fi
 
 docker compose down --remove-orphans >/dev/null 2>&1 || true
 echo "wrote $OUT"; cat "$OUT"

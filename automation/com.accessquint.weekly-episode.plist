@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.accessquint.weekly-episode</string>
+
+  <!-- Runs the weekly episode lab. Defaults to the agent driver; add
+       <string>- -shell</string> as a second ProgramArgument for the deterministic path. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/veera/dev/prod-eval/docs/automation/weekly_run.sh</string>
+  </array>
+
+  <!-- Every Monday at 03:00 local. If the Mac is asleep at 03:00, launchd runs
+       it at the next wake (unlike cron, which would skip). -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>1</integer>
+    <key>Hour</key><integer>3</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- launchd hands the job almost no environment. Give it a PATH that finds
+       docker, claude, python3, git, and security. Adjust if yours differ
+       (Docker Desktop CLI lives in /usr/local/bin; Homebrew on Apple Silicon
+       in /opt/homebrew/bin). -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/veera/dev/prod-eval/docs</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/veera/dev/prod-eval/docs/automation/logs/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/veera/dev/prod-eval/docs/automation/logs/launchd.err.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

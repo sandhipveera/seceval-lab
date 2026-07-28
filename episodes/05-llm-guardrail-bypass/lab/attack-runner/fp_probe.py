@@ -19,7 +19,7 @@ def main():
     for text in lines:
         t0 = time.perf_counter()
         try:
-            r = requests.post(HIT_URL, json={"message": text}, timeout=30)
+            r = requests.post(HIT_URL, json={"message": text}, timeout=120)
             latencies.append((time.perf_counter() - t0) * 1000.0)
             body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
             if bool(body.get("blocked", False)) or r.status_code == 403:

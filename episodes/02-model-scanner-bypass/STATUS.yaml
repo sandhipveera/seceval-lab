@@ -1,7 +1,7 @@
 episode: 02
 slug: model-scanner-bypass
 title: "I Hid Malware in an AI Model — Which Scanner Caught It?"
-status: new            # new | in_production | published
+status: published            # new | in_production | published
 delivered: 2026-07-01
 lab: docker
 source: weekly-episode-storyboard

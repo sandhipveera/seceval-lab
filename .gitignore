@@ -31,3 +31,8 @@ episodes/**/RUN.md
 episodes/**/NOTES.md
 episodes/**/CLAUDE_CODE_BUILD.md
 episodes/**/assets/*publish*notes*.md
+
+# Weekly runner logs
+automation/logs/
+episodes/**/assets/exports/
+*.log

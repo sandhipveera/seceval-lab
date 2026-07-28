@@ -1,0 +1,17 @@
+# Compose OVERRIDE for the host-side Llama Guard 4 (Metal) leg only.
+# labnet is internal:true, so the host cannot reach the target through it. For THIS leg we add a
+# normal bridge network + publish the target's port so the host-side guard (on :8091) can forward
+# to the target at http://localhost:8080/chat. This is a deliberate, disclosed fair-test deviation:
+# the target port is exposed to the host for this one guard. The target stays a benign canary stub.
+#
+# Use:  docker compose -f docker-compose.yml -f host-llamaguard/docker-compose.hostguard.yml \
+#         up -d --wait target-chatbot
+services:
+  target-chatbot:
+    networks: [labnet, hostbridge]
+    ports:
+      - "127.0.0.1:8080:8080"      # host-only bind; not exposed off-box
+
+networks:
+  hostbridge:
+    driver: bridge                 # NOT internal — gives the published port a route to the host
