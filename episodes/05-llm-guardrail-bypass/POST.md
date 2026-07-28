@@ -3,7 +3,7 @@ title: "I Hid a Jailbreak Inside an Emoji. Every Guardrail's Input Filter Missed
 description: "A reproducible, Docker-based teardown of AI guardrails. One guarded chatbot, one benign canary, one jailbreak fired three ways (plain, character-injection, emoji-smuggled). The disguise walked past every input classifier that ran (NeMo Guardrails and Guardrails AI); only a dumb output canary scan stopped the leak. Guardrails' prompt-injection validator and Meta's Llama Guard 4 could not run honestly in a no-egress lab, and that is its own finding."
 tags: [AI security, LLM guardrails, prompt injection, jailbreak, emoji smuggling, defense in depth, blue-team]
 status: ready
-note: "All numbers are from the real lab run: artifacts/findings.csv, artifacts/metrics.csv, artifacts/MECHANISM.md. Repo pinned at <PINNED_COMMIT> (set at the final ep05 commit)."
+note: "All numbers are from the real lab run: artifacts/findings.csv, artifacts/metrics.csv, artifacts/MECHANISM.md. Repo pinned at 1438d14 (set at the final ep05 commit)."
 ---
 
 # I Hid a Jailbreak Inside an Emoji. Every Guardrail's Input Filter Missed It.
@@ -204,7 +204,7 @@ of their benchmark scores.
 ## Reproduce it yourself
 
 Every number above comes from the lab run, reproducible from
-[the repo](https://github.com/sandhipveera/seceval-lab) at commit `<PINNED_COMMIT>`: same vulnerable
+[the repo](https://github.com/sandhipveera/seceval-lab) at commit `1438d14`: same vulnerable
 chatbot, same canary, same three attack variants, same guard configs, including the build fixes that
 keep NeMo's perplexity rail genuinely live. It is all benign, the "secret" is a canary token on an
 isolated network, so nothing real leaks and you can run it yourself and see where your results

@@ -41,7 +41,7 @@ So a question for anyone running these in production: if I got past your input g
 
 # First comment (post immediately after)
 
-Full write-up plus the reproducible lab (vulnerable chatbot, benign canary, the three payload variants, every guard config, isolated no-egress Docker): github.com/sandhipveera/seceval-lab (@<PIN COMMIT>). Two guards ran clean (NeMo, Guardrails AI); Guardrails' prompt-injection validator needs an LLM/egress so it cannot run air-gapped, and Llama Guard 4 would not run to completion (Llama4 config bug on both GPU and CPU). Both documented as NOT EVALUATED rather than guessed.
+Full write-up plus the reproducible lab (vulnerable chatbot, benign canary, the three payload variants, every guard config, isolated no-egress Docker): github.com/sandhipveera/seceval-lab (@1438d14). Two guards ran clean (NeMo, Guardrails AI); Guardrails' prompt-injection validator needs an LLM/egress so it cannot run air-gapped, and Llama Guard 4 would not run to completion (Llama4 config bug on both GPU and CPU). Both documented as NOT EVALUATED rather than guessed.
 
 ---
 
