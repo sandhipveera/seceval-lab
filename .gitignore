@@ -25,3 +25,14 @@ extras/**/terraform/.terraform/
 extras/**/*.tfstate*
 extras/**/terraform.tfvars
 EPISODE_BACKLOG.private.md
+
+# Internal working docs — keep OUT of the public repo (runbooks, build notes, build contracts)
+episodes/**/RUN.md
+episodes/**/NOTES.md
+episodes/**/CLAUDE_CODE_BUILD.md
+episodes/**/assets/*publish*notes*.md
+
+# Weekly runner logs
+automation/logs/
+episodes/**/assets/exports/
+*.log
