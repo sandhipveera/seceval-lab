@@ -16,8 +16,9 @@ entry, delivers its package into `episodes/<NN>-<slug>/`, and checks it off. All
 
 ## In production
 
-- [ ] 05 — LLM guardrails head-to-head *(matchup + hook revealed at launch)*
-- [ ] 06 — AI gateway / LLM-proxy security *(matchup + hook revealed at launch)*
+- [x] 05 — LLM guardrails head-to-head *(delivered)* — NeMo Guardrails vs Guardrails AI vs Llama Guard 4; fresh hook: the guardrail became the attack surface in 2026 (NeMo CVEs fixed in 2.7.3 + Cato CTRL model-file RCE)
+- [x] 06 — AI gateway / LLM-proxy security *(delivered)* — LiteLLM vs Portkey vs Bifrost; fresh hook: the gateway became the attack surface in 2026 (LiteLLM PyPI supply-chain compromise + CVE-2026-42208 pre-auth SQLi on CISA KEV; Portkey open-sourced + PANW acquisition intent)
+- [x] 07 — Commercial AI firewalls *(delivered)* — pivoted to open-source self-hostable agent firewalls: Pipelock vs Meta LlamaFirewall vs Invariant Gateway; fresh hook: every commercial firewall this was going to feature (Lakera, Prompt Security, Protect AI Guardian) got acquired in 2025 and can't run on a no-egress lab, so the story is the OSS challengers defending the agent's outbound-traffic exfil boundary
 
 ## Notes for each build
 - Same fixed 7-criterion scorecard rubric (install 15%, detection/efficacy 30%, signal quality
@@ -37,8 +38,8 @@ product. Three interchangeable fuel sources keep it from running dry: (A) produc
 lane once the catalog ages.
 
 ### A. Product-matchup themes (next up)
-- Commercial AI firewalls
-- PII / secrets redaction before the model
+- ~~Commercial AI firewalls~~ *(delivered as ep07 — pivoted to OSS self-hostable agent firewalls; the commercial ones all got acquired in 2025 and can't run on a no-egress lab)*
+- PII / secrets redaction before the model  ← **next up** (teased in ep07 outro)
 - Model provenance / signing / AI-SBOM
 - Jailbreak / injection classifier bake-off
 - Agent sandboxing / tool isolation
