@@ -102,7 +102,7 @@ installed and beaten."
 Fairness rule, same as every episode: one gateway at a time, from clean container state, same app,
 same attacks, same order. Only the gateway changes.
 
-## Round 1 — Setup, and two things that only show up when you actually run it
+## Round 1: Setup, and two things that only show up when you actually run it
 
 **Cloudflare AI Gateway was in the line-up and I cut it.** It's a hosted service: it can't run on a
 no-egress network and can't be held to the clean-container rule. Flagged the same way Promptfoo was
@@ -131,7 +131,7 @@ as character classes. It also refuses a provider config without an `api_key`, an
 requires the upstream host on a `TRUSTED_CUSTOM_HOSTS` allowlist. All defensible, all undocumented in
 the place you look first.
 
-## Round 2 — Five attacks, one policy, three gateways
+## Round 2: Five attacks, one policy, three gateways
 
 A **direct injection** telling the model to reveal its system prompt. An **indirect injection** hidden
 in a retrieved document. A request carrying **fake PII**. A response carrying the **canary**. And an
@@ -166,7 +166,7 @@ LiteLLM. Neither product has an obfuscation-detection edge here. Say measured, n
 That's the practical lesson: an output-blind gateway would have gone five for five on the input side
 and still let the secret walk.
 
-## Round 2b — The gateway as target: posture, not payloads
+## Round 2b: The gateway as target, posture not payloads
 
 To be explicit about method: **I do not write or ship exploits.** Nothing here fires a payload at
 CVE-2026-42208 or any other advisory. Read-only posture, the same three questions you'd ask of any
@@ -190,7 +190,7 @@ And a note on my own lab: the P3 pinning check initially failed on the canary si
 by tag rather than digest. A fixed tag is still a floating reference. The check caught its own author,
 which is the only real evidence a check works.
 
-## Round 3 — The number that changed the episode
+## Round 3: The number that changed the episode
 
 A guardrail that blocks legitimate traffic gets switched off within a week, so false positives matter
 as much as catches. My first clean set was 24 ordinary support questions. Every gateway scored zero
