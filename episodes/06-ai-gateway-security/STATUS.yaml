@@ -1,0 +1,28 @@
+episode: 06
+slug: ai-gateway-security
+title: "I Attacked the Gateway Guarding My LLM — Which One Held?"
+status: new            # new | in_production | published
+delivered: 2026-07-17
+lab: docker
+source: weekly-episode-storyboard
+deliverables:
+  storyboard: STORYBOARD.md
+  script: script.yaml
+  blog: POST.md
+  youtube: YOUTUBE.md
+  lab: lab/docker-compose.yml
+tools_under_test: [litellm, portkey, bifrost]
+target: vulnerable-llm-app-behind-gateway
+excluded:
+  - tool: cloudflare-ai-gateway
+    reason: "Hosted SaaS — cannot run on the isolated no-egress network; testing it would break the fair-test rule (same target, same clean container state). Flagged as with Promptfoo in ep03."
+notes: >-
+  Backlog note: the Active slate was fully checked. Fallback F1 (AI SOC explainer) was skipped for
+  the same reasons recorded against it at ep05 — explainer/react format doesn't fit the head-to-head
+  Docker + 7-criterion scorecard, and the space is saturated. Promoted runway item A-06 instead,
+  which fits the format and carries a strong 2026 hook.
+  Fresh hook: the gateway is sold as the security control for LLM traffic and in 2026 became the
+  attack surface — LiteLLM PyPI supply-chain compromise (Mar 2026, ~40 min window, TeamPCP) and
+  CVE-2026-42208 (pre-auth SQLi, CVSS 9.3, CISA KEV May 2026); Portkey fully open-sourced (Mar 2026)
+  and Palo Alto Networks acquisition intent (Apr 2026). Episode adds a second axis — read-only
+  posture checks on the gateway itself (no exploits shipped or run).

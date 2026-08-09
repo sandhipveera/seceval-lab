@@ -1,0 +1,3 @@
+{
+  "x-portkey-config": "{\"provider\": \"openai\", \"api_key\": \"sk-lab-not-a-real-key\", \"custom_host\": \"http://ep06-stub-model:8080/v1\"}"
+}

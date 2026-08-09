@@ -1,0 +1,22 @@
+# Portkey-OSS-gateway-shaped container for the Ep.06 lab.
+#
+# TODO(DIGEST-PIN): before publishing numbers, replace this build with (or cross-check results
+# against) the real upstream image/package:
+#   npm view @portkey-ai/gateway versions --json     # confirm the current Apache-2.0 release
+#   docker buildx imagetools inspect portkeyai/gateway:<tag>   # get @sha256:...
+# then pin by digest. This build environment has no network access to resolve either, so the
+# version above (gateway.py's PINNED_VERSION) is a best-effort placeholder and this image is
+# intentionally left unpinned -- flagged by the lab's own P3 posture check, same as gateways/litellm.
+#
+# See gateway.py / config.json for why this container runs a lab-built declarative-guardrail
+# interpreter rather than the literal @portkey-ai/gateway npm package.
+FROM python:3.11-slim
+
+WORKDIR /app
+RUN pip install --no-cache-dir "flask==3.0.3" "requests==2.32.3"
+
+COPY patterns.py gateway.py config.json /app/
+
+EXPOSE 8787 8788
+ENV PORTKEY_CONFIG=/app/config.json GUARDRAILS=on
+CMD ["python", "/app/gateway.py"]

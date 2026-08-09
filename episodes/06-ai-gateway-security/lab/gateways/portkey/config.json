@@ -1,0 +1,32 @@
+{
+  "_comment": "Portkey OSS gateway config for the Ep.06 lab, shaped like Portkey's public declarative Guardrails schema (checks[] + onFail action) rather than a custom-code hook -- that declarative-vs-hook distinction is the real, documented product difference this episode is measuring between Portkey and LiteLLM. JUDGMENT CALL (flag for operator review): this container does not vendor the literal @portkey-ai/gateway npm package -- no network access in this build environment to install/verify it. gateway.py interprets this exact config.json as a first-class ruleset. Before publishing numbers, swap in the real upstream image (see Dockerfile TODO) and re-run.",
+  "provider": "openai",
+  "override_params": {
+    "api_base": "http://ep06-stub-model:8080/v1"
+  },
+  "input_guardrails": [
+    {
+      "id": "ep06-injection-guard",
+      "checks": [
+        {"id": "default.regexMatch", "parameters": {"rule": "injection"}}
+      ],
+      "on_fail": {"action": "deny"}
+    },
+    {
+      "id": "ep06-pii-guard",
+      "checks": [
+        {"id": "default.regexMatch", "parameters": {"rule": "pii"}}
+      ],
+      "on_fail": {"action": "redact"}
+    }
+  ],
+  "output_guardrails": [
+    {
+      "id": "ep06-canary-egress-guard",
+      "checks": [
+        {"id": "default.regexMatch", "parameters": {"rule": "canary"}}
+      ],
+      "on_fail": {"action": "deny"}
+    }
+  ]
+}

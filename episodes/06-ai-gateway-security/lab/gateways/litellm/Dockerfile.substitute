@@ -1,0 +1,24 @@
+# LiteLLM-proxy-shaped gateway container for the Ep.06 lab.
+#
+# TODO(DIGEST-PIN): before publishing numbers, replace this build with (or cross-check results
+# against) the real upstream image:
+#   docker pull ghcr.io/berriai/litellm:v1.83.7-stable
+#   docker buildx imagetools inspect ghcr.io/berriai/litellm:v1.83.7-stable   # get @sha256:...
+# then pin `FROM ghcr.io/berriai/litellm@sha256:<digest>` (a fixed tag alone is a floating
+# reference -- P3's posture check treats it the same as an unpinned `:latest`). This build
+# environment has no network access to resolve that digest, so it is intentionally left unpinned
+# here and flagged by the lab's own P3 posture check (see runner/posture.py) -- eating our own
+# dog food on the "pin by digest" lesson this episode argues for.
+#
+# See gateway.py / config.yaml for why this container runs a lab-built proxy shaped like LiteLLM
+# Proxy's config + guardrail-hook API rather than the literal `litellm[proxy]` PyPI package.
+FROM python:3.11-slim
+
+WORKDIR /app
+RUN pip install --no-cache-dir "flask==3.0.3" "requests==2.32.3" "pyyaml==6.0.2"
+
+COPY patterns.py custom_guardrail.py gateway.py config.yaml /app/
+
+EXPOSE 4000 4001
+ENV LITELLM_CONFIG=/app/config.yaml GUARDRAILS=on LITELLM_MASTER_KEY=sk-lab-master-not-real
+CMD ["python", "/app/gateway.py"]

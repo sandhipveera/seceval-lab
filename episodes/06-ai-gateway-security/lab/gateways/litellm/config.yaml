@@ -1,0 +1,39 @@
+# LiteLLM Proxy config for the Ep.06 lab -- shaped exactly like a real LiteLLM Proxy config.yaml
+# (model_list / litellm_settings / general_settings / guardrails), read by gateway.py.
+#
+# JUDGMENT CALL (flag for operator review before publishing numbers): this container does not
+# vendor the literal `litellm[proxy]` PyPI package. This build environment has no network access,
+# so nothing here could be installed or exercised against the real package to confirm exact
+# behavior. gateway.py instead implements a routing + guardrail engine that reads THIS SAME config
+# file shape and enforces LiteLLM's documented custom-guardrail hook points (pre_call / post_call)
+# as faithfully as could be verified offline. Before publishing latency/memory numbers, swap in the
+# real `ghcr.io/berriai/litellm:v1.83.7-stable` image pinned by digest (see the TODO in Dockerfile)
+# and re-run -- the catch/miss LOGIC here is config-driven and should transfer, but performance
+# numbers from this substitute do not represent the real product.
+
+model_list:
+  - model_name: stub-gullible
+    litellm_params:
+      model: openai/stub-gullible-v1
+      api_base: http://ep06-stub-model:8080/v1
+      api_key: sk-lab-not-a-real-key
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+
+general_settings:
+  master_key: env:LITELLM_MASTER_KEY   # unset -> every route open; set (as it is in this lab's
+                                        # compose) -> management routes require Authorization:
+                                        # Bearer <master_key>. /health stays public by design.
+
+# Real LiteLLM Proxy lets you register a CustomGuardrail class (pre_call / post_call hooks) via
+# `guardrail: <module>.<callable>`. Modeled here as a single lab guardrail with both hooks wired,
+# toggled wholesale by GUARDRAILS=on|off (gateway.py reads that env directly rather than requiring
+# a config reload, since compose only gives us one config file per container start).
+guardrails:
+  - guardrail_name: "ep06-canary-guard"
+    litellm_params:
+      guardrail: custom_guardrail.CanaryGuardrail
+      mode: ["pre_call", "post_call"]
+      default_on: true

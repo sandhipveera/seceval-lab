@@ -1,0 +1,52 @@
+{
+  "_comment": "Ep.06 lab — exact images/versions/digests that actually ran. Resolved 2026-08-05 on Veera's Mac (linux/arm64). All three gateways ran on REAL upstream images (no stand-in substitutes). Digests are the repo digests of the pulled images, pinned in each gateways/*/Dockerfile FROM and in docker-compose.yml for canary-sink.",
+  "host": {"platform": "darwin", "arch": "arm64", "docker_server": "29.5.3"},
+  "gateways": {
+    "litellm": {
+      "product": "LiteLLM Proxy (BerriAI)",
+      "image": "ghcr.io/berriai/litellm",
+      "tag": "v1.83.7-stable",
+      "digest": "sha256:af0152ca6dfb6703b35c0d4899effa9ac132bce9a4fbcbe1dc6ef145c100db26",
+      "version": "1.83.7-stable",
+      "ran_on": "real-upstream-image",
+      "guardrails_native": true,
+      "guardrails_mechanism": "LiteLLM CustomGuardrail extension point (pre_call + post_call), config.on.yaml -> ep06_guardrail.Ep06CanaryGuardrail; reuses the lab's patterns.py detection",
+      "notes": "v1.83.7-stable is the first patched release for the 2026 advisories (CVE-2026-42208 pre-auth SQLi et al.). master_key set explicitly (LITELLM_MASTER_KEY) so /model/info is auth-gated (P1)."
+    },
+    "portkey": {
+      "product": "Portkey OSS Gateway (@portkey-ai/gateway)",
+      "image": "portkeyai/gateway",
+      "tag": "latest",
+      "digest": "sha256:97f094d9c8a764cbfaa2a7138c0017b247ca923bb06db1b4c13b7f8a33b5200d",
+      "version": "1.15.2",
+      "license_per_image_label": "MIT",
+      "ran_on": "real-upstream-image",
+      "guardrails_native": true,
+      "guardrails_mechanism": "Portkey config guardrails via x-portkey-config header: input_guardrails + output_guardrails using the real default.regexMatch check (deny on match); routing via provider=openai + custom_host to the stub (TRUSTED_CUSTOM_HOSTS allowlist)",
+      "notes": "Config/routing/guardrails driven per-request via x-portkey-config (victim-app injects it). On a guardrail hit Portkey returns HTTP 446; the 446 body echoes the offending text in hook_results, but victim-app only reads choices on a 2xx, so the canary is not surfaced to the app and the sink is not hit."
+    },
+    "bifrost": {
+      "product": "Bifrost (Maxim AI)",
+      "image": "maximhq/bifrost",
+      "tag": "latest",
+      "digest": "sha256:14f704fcee64de509c139d14458871a4221f71f28a397f2b4d92bbe092d7a63c",
+      "version": "1.6.8",
+      "ran_on": "real-upstream-image",
+      "guardrails_native": false,
+      "guardrails_mechanism": "none (bring-your-own policy layer / governance); recorded as 'not offered', never scored as a miss",
+      "notes": "Requires a model-pricing cache to boot; the labnet is internal (no egress), so the cache was pre-seeded OUTSIDE the run (see gateways/bifrost/seed_pricing.sh) and baked into the image, analogous to the image pulls. Routes to the stub via config.json (allow_private_network). Admin/config API (/api/config) ships with auth disabled -> reachable unauthenticated (P1)."
+    }
+  },
+  "support_images": {
+    "canary-sink": {
+      "image": "mendhak/http-https-echo",
+      "tag": "31",
+      "digest": "sha256:0fefe04350131d7bb28355e3bf037062643e45f4a8a32f23679529e1b09d8ce4",
+      "notes": "Pinned by digest in docker-compose.yml during STEP 0. It was an UNPINNED floating tag (mendhak/http-https-echo:31) before this run — which P3 correctly flagged; now pinned."
+    },
+    "stub-model": {"build": "./stub-model", "base": "python:3.11-slim", "notes": "deterministic OpenAI-compatible stub; ground-truth /_seen endpoint added this run"},
+    "victim-app": {"build": "./victim-app", "base": "python:3.11-slim"},
+    "doc-server": {"build": "./doc-server", "base": "python:3.11-slim"},
+    "runner": {"build": "./runner", "base": "python:3.11-slim"}
+  }
+}

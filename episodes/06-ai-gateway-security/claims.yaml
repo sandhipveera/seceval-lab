@@ -1,0 +1,99 @@
+# claims.yaml - single source of truth for every external claim in Ep.06's POST.md.
+#
+# Lab numbers are NOT listed here: they are verified directly against
+# lab/artifacts/{findings,posture,metrics}.csv, which is a stronger check than prose matching.
+# This file covers the NEWS claims, which is where episodes 03 and the 2026-07-30 case study
+# both went wrong, and where nothing in the repo would otherwise catch a mistake.
+#
+# Every entry below was re-verified against primary sources on 2026-08-06, and four of them
+# were WRONG in the first draft of POST.md. Those four carry forbidden_near guards.
+
+claims:
+  - id: litellm_downloads
+    value: "95 million"
+    wording: "95 million times a month"
+    measures: "LiteLLM's PyPI download volume per MONTH, as reported by Endor Labs and others
+               covering the TeamPCP campaign. The first draft said '3.4 million times a day',
+               which is a derived per-day figure no source states."
+    source: "https://www.endorlabs.com/learn/teampcp-isnt-done"
+    verified: "2026-08-06"
+    forbidden_near:
+      - "million times a day"
+      - "3\\.4 million"
+
+  - id: cve_cvss
+    value: "9.3"
+    wording: "CVSS 9.3"
+    measures: "CVSS base score for CVE-2026-42208, pre-auth SQLi in LiteLLM Proxy's API-key
+               verification path. Affects 1.81.16-1.83.6, fixed in 1.83.7-stable. Some trackers
+               list 9.8; the post says so rather than picking one silently."
+    source: "https://docs.litellm.ai/blog/cve-2026-42208-litellm-proxy-sql-injection"
+    verified: "2026-08-06"
+
+  - id: exploit_window
+    value: "36 hours"
+    wording: "36 hours"
+    measures: "Time from disclosure to first CONFIRMED in-the-wild exploitation, documented by
+               Sysdig Threat Research. The first draft said 'roughly a day', which understates it."
+    source: "https://www.sysdig.com/blog/cve-2026-42208-targeted-sql-injection-against-litellms-authentication-path-discovered-36-hours-following-vulnerability-disclosure"
+    verified: "2026-08-06"
+
+  - id: kev_date
+    value: "8 May 2026"
+    wording: "8 May 2026"
+    measures: "Date CISA added CVE-2026-42208 to the Known Exploited Vulnerabilities catalog.
+               Federal remediation deadline was 11 May 2026."
+    source: "https://thehackernews.com/2026/04/litellm-cve-2026-42208-sql-injection.html"
+    verified: "2026-08-06"
+
+  - id: portkey_license
+    value: "MIT"
+    wording: "MIT license"
+    measures: "License of the open-sourced Portkey production gateway (Portkey-AI/gateway).
+               The first draft said Apache 2.0. The lab's own artifacts/versions.json recorded
+               the image label as MIT the whole time, and the prose contradicted it."
+    source: "https://github.com/portkey-ai/gateway"
+    verified: "2026-08-06"
+    forbidden_near:
+      - "Apache"
+
+  - id: acquisition_close
+    value: "29 May 2026"
+    wording: "closed the acquisition on 29 May 2026"
+    measures: "Date Palo Alto Networks COMPLETED its acquisition of Portkey. Intent was announced
+               30 April 2026. The first draft described the deal as pending, which was true in
+               April and false by the time of writing."
+    source: "https://www.paloaltonetworks.com/company/press/2026/palo-alto-networks-completes-acquisition-of-portkey-to-secure-ai-agents"
+    verified: "2026-08-06"
+    forbidden_near:
+      - "pending Palo Alto"
+      - "plans to acquire"
+      - "(?<!announced its )intent to acquire the company\\.?$"
+
+  - id: supply_chain_window
+    value: "forty minutes"
+    wording: "quarantined by PyPI after about forty minutes"
+    measures: "How long the backdoored litellm 1.82.7/1.82.8 wheels were live on PyPI on
+               24 March 2026 before quarantine."
+    source: "https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/"
+    verified: "2026-08-06"
+
+  - id: clean_set_ratio
+    value: "13 of 24"
+    wording: "13 of 24"
+    measures: "Count of the HARD clean set (c2) refused by each guarded gateway. c2 was written
+               deliberately to sit near the guard's trigger vocabulary, so this ratio is a
+               property of the TEST, not a false-positive rate over production traffic. Any
+               phrasing that generalises it to real traffic is an overclaim."
+    source: "lab/artifacts/findings.csv"
+    verified: "2026-08-06"
+    # NOTE: these must match the ASSERTION SHAPE, not just the vocabulary. A first attempt
+    # forbade "of ... traffic" outright and immediately fired on the post's own CORRECTIVE
+    # sentence ("not a sample of production traffic"). Same failure as the Akamai guard, which
+    # needed a (?<!NOT ) lookbehind. Require the quantifier adjacent to the verb so only the
+    # generalising claim matches.
+    forbidden_near:
+      - "(refus\\w+|block\\w+|reject\\w+|fail\\w+)[^.]{0,40}\\b(half|\\d{1,3}%)\\b[^.]{0,25}of (all |real |production |live |legitimate |customer )*traffic"
+      - "\\bfalse.positive rate of \\d"
+      - "half (of )?(your|all|real|our) (customers|traffic|users)"
+      - "\\b54 ?% of"

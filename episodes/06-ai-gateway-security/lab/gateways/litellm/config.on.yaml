@@ -1,0 +1,23 @@
+# Ep.06 lab — REAL LiteLLM Proxy config, GUARDRAILS=on variant. Same routing as config.off.yaml
+# plus the lab's canary guardrail wired through LiteLLM's documented CustomGuardrail extension point
+# (pre_call + post_call). ep06_entrypoint.sh selects this file when GUARDRAILS=on.
+model_list:
+  - model_name: stub-gullible-v1
+    litellm_params:
+      model: openai/stub-gullible-v1
+      api_base: http://ep06-stub-model:8080/v1
+      api_key: sk-lab-not-a-real-key
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+guardrails:
+  - guardrail_name: "ep06-canary-guard"
+    litellm_params:
+      guardrail: ep06_guardrail.Ep06CanaryGuardrail   # <module>.<class>, resolved next to this config
+      mode: ["pre_call", "post_call"]
+      default_on: true

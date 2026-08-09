@@ -1,0 +1,135 @@
+# Machine-readable twin of STORYBOARD.md — drives voiceover, recording, captions.
+# Narration text is identical to the storyboard.
+episode:
+  number: 6
+  slug: ai-gateway-security
+  title: "I Attacked the Gateway Guarding My LLM — Which One Held?"
+  resolution: "1920x1080"
+  fps: 30
+  lab: docker
+
+voice:
+  provider: elevenlabs
+  voice_id: "${ELEVENLABS_VOICE_ID}"
+  model_id: "eleven_multilingual_v2"
+  stability: 0.45
+  similarity_boost: 0.80
+  style: 0.0
+  speed: 1.0
+
+scenes:
+  - id: s1_cold_open
+    narration: >-
+      Every request your app sends to a model probably goes through one box. An AI gateway. It's
+      where you put your keys, your rate limits, your guardrails — it's the thing that's supposed
+      to keep the model safe. In twenty twenty-six that box became a target. So I ran two tests at
+      once. Can these gateways actually stop a prompt injection and a secret walking out the door?
+      And how do they hold up when the attacker aims at the gateway itself? Three gateways, one
+      vulnerable app, no marketing.
+    action: { type: browser, url: "file://${ASSETS}/title_cold_open.html", duration_hint: 30 }
+
+  - id: s2_category
+    narration: >-
+      Here's the category. An AI gateway, or LLM proxy, sits between your application and every
+      model provider. One OpenAI-compatible endpoint, and behind it your routing, fallbacks,
+      budgets, logging — and increasingly, your guardrails. Which is a lovely idea: one chokepoint,
+      one place to enforce policy. It's also a lovely idea for an attacker, because that same
+      chokepoint sees every prompt, every response, and holds every provider key you own. Twenty
+      twenty-six proved the point. LiteLLM, a proxy pulled roughly three-point-four million times a
+      day, had two poisoned versions published to PyPI in March — live for about forty minutes,
+      carrying a credential harvester, a Kubernetes lateral-movement kit, and a backdoor. A month
+      later a pre-authentication SQL injection in its key-verification path, scored
+      nine-point-three, went from advisory to real exploitation attempts in about a day, and landed
+      on CISA's known-exploited list in May. Meanwhile Portkey open-sourced its entire gateway in
+      March, and Palo Alto Networks moved to acquire it in April. The category is consolidating and
+      getting shot at, at the same time.
+    action: { type: browser, url: "file://${ASSETS}/gateway_timeline.html", duration_hint: 60 }
+
+  - id: s3_threats
+    narration: >-
+      So there are two threats here and people keep mixing them up. Threat one is what the gateway
+      is meant to catch: someone talks your app into ignoring its instructions, or a secret rides
+      out in a response — prompt injection and data egress. That's the guardrail's job. Threat two
+      is the gateway as the way in. It holds every key. It usually has an admin API. It's a Python
+      or Node service you pulled from a registry and probably pinned loosely. Compromise it and you
+      don't need to jailbreak anything — you just read the traffic. The uncomfortable part is that
+      most teams bought the gateway for threat one and never threat-modeled threat two. So I'm
+      testing both.
+    action: { type: browser, url: "file://${ASSETS}/threats.html", duration_hint: 70 }
+
+  - id: s4_lab_rules
+    narration: >-
+      The setup, and fairness matters. Everything is local Docker on one network marked internal,
+      with no route out — so nothing leaves and no real provider key is involved. In-network I run
+      a stub model that speaks the OpenAI API and is deliberately gullible, a vulnerable chat app
+      whose system prompt holds a benign canary secret, and a sink that stands in for the
+      attacker's collection point. If that canary reaches the sink, the guardrail failed — that's
+      my ground truth. Then one gateway at a time, from a clean container state, same app, same
+      attacks, same order. Only the gateway changes.
+    action: { type: terminal, cast: "lab_bringup", duration_hint: 60 }
+
+  - id: s5_setup_coverage
+    narration: >-
+      Round one — install each one and see what it actually covers. LiteLLM is the default for
+      self-hosters: a hundred-plus providers behind one endpoint, budgets, keys, and a guardrails
+      hook you configure. Portkey went fully open source in March under Apache two-point-oh, and
+      pushed what used to be paid — governance, observability, and its guardrails library — into
+      the box you can run yourself; guardrails are first-class there rather than bolted on.
+      Bifrost, from Maxim AI, is the performance play, written for very low overhead. I also wanted
+      Cloudflare AI Gateway in this, and I cut it — it's a hosted service, so it can't run on a
+      no-egress network, and testing it would break the fair-test rule this series lives by. Same
+      reason Promptfoo got flagged in episode three. Install times and the coverage grid are on
+      screen.
+    action: { type: terminal, cast: "gateway_setup", duration_hint: 90 }
+
+  - id: s6_detection
+    narration: >-
+      Now the actual test. Six scenarios against each gateway. A direct injection telling the model
+      to reveal its system prompt. An indirect one, hidden in a document the app retrieves. A
+      request carrying fake personal data, to see if it gets redacted before it reaches the model.
+      A response carrying the canary secret, to see if anything catches it on the way out. An
+      obfuscated variant of the injection — base sixty-four and lookalike characters, the
+      tokenizer-gap trick from episode five. And a clean set, to see what gets flagged that
+      shouldn't. Then the second axis: the gateway as target. I do not ship exploits, so this is
+      posture, not payloads — is the admin surface reachable without credentials from another
+      container on the network, is the running version inside the patched range for the twenty
+      twenty-six advisories, and are the image and its dependencies pinned by digest, which is the
+      only thing that would have saved you in March. Everything normalizes into one findings table.
+      Here's who caught what.
+    action: { type: terminal, cast: "attack_run", duration_hint: 160 }
+
+  - id: s7_noise_cost
+    narration: >-
+      Detection isn't the whole story. A guardrail that blocks legitimate traffic gets turned off
+      within a week — so false positives on the clean set matter as much as catches. And this box
+      is on the hot path for every single request, so its overhead is a tax you pay forever, not
+      once. I measured added latency at the median and the tail, throughput under the same load,
+      and memory per container, with guardrails off and then on — because the honest number is the
+      cost of the protection, not the cost of the proxy. Here's what each one charged me.
+    action: { type: browser, url: "file://${ASSETS}/metrics.html", duration_hint: 75 }
+
+  - id: s8_scorecard
+    narration: >-
+      Same seven criteria as every episode — install, detection, signal quality, performance,
+      usability, docs, and value. And the same conclusion I keep arriving at: no single winner,
+      because these three are optimizing for different things. Take LiteLLM if breadth of providers
+      and cost control is the actual job, and treat its guardrails as a bonus — but pin it by
+      digest, put its admin API behind auth, and watch its advisories like you'd watch a load
+      balancer's. Take Portkey if you want guardrails to be the point rather than a hook, and the
+      open-source release means you can now run that without the SaaS. Take Bifrost when the
+      overhead is the deciding constraint and you're bringing your own policy layer. And whichever
+      you pick, the real lesson of twenty twenty-six is that the gateway is infrastructure, not a
+      security product you install and forget. It needs patching, pinning, and a blast radius.
+    action: { type: browser, url: "file://${ASSETS}/scorecard.html", duration_hint: 100 }
+
+  - id: s9_outro
+    narration: >-
+      All of it reproduces — the vulnerable app, the stub model, the attack set, the gateway
+      configs, down to the commit. It's benign by construction: the canary trips a sink on an
+      isolated network, the posture checks read versions and reachability rather than firing
+      exploits, and nothing here is weaponized. Run it and tell me where your numbers differ from
+      mine — especially on the obfuscated case, because that's where I expect the most
+      disagreement. Next episode I take the commercial AI firewalls — Lakera Guard, Prompt
+      Security, Protect AI Guardian — and see whether paying changes the answer. Subscribe, and
+      I'll see you in the lab.
+    action: { type: browser, url: "file://${ASSETS}/outro.html", duration_hint: 60 }

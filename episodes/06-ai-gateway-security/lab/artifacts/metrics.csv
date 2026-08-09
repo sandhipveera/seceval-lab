@@ -1,0 +1,8 @@
+gateway,guardrails,added_latency_p50_ms,added_latency_p95_ms,throughput_rps,mem_mb,cpu_pct
+none,n/a,0,0,883.14,,
+litellm,off,16.8,22.4,311.32,867.6,3.1
+portkey,off,1.5,17.1,630.75,90.1,2.4
+bifrost,off,0.7,1.4,832.04,142.1,0.7
+litellm,on,15.7,22.9,328.01,867.4,2.9
+portkey,on,3.0,14.7,617.19,95.1,2.4
+bifrost,on,-0.1,-0.5,889.13,138.3,0.7

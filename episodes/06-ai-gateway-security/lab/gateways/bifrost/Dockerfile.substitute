@@ -1,0 +1,22 @@
+# Bifrost (Maxim AI)-shaped container for the Ep.06 lab.
+#
+# TODO(DIGEST-PIN): before publishing numbers, replace this build with (or cross-check results
+# against) the real upstream Bifrost image (Maxim AI, maximhq/bifrost or the project's published
+# registry -- confirm current location before pulling) pinned by digest:
+#   docker buildx imagetools inspect <real-bifrost-image>:<tag>   # get @sha256:...
+# This build environment has no network access to resolve it, so PINNED_VERSION in gateway.py is a
+# best-effort placeholder and this image is intentionally left unpinned -- flagged by the lab's own
+# P3 posture check, same as the other two gateways.
+#
+# See gateway.py / policy_layer.py for why GUARDRAILS=on here is an explicitly bring-your-own
+# layer, not a Bifrost-native capability.
+FROM python:3.11-slim
+
+WORKDIR /app
+RUN pip install --no-cache-dir "flask==3.0.3" "requests==2.32.3"
+
+COPY patterns.py policy_layer.py gateway.py config.json /app/
+
+EXPOSE 8080 8081
+ENV BIFROST_CONFIG=/app/config.json GUARDRAILS=on
+CMD ["python", "/app/gateway.py"]

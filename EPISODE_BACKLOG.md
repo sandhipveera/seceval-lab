@@ -19,6 +19,7 @@ entry, delivers its package into `episodes/<NN>-<slug>/`, and checks it off. All
 - [x] 05 — LLM guardrails head-to-head *(delivered)* — NeMo Guardrails vs Guardrails AI vs Llama Guard 4; fresh hook: the guardrail became the attack surface in 2026 (NeMo CVEs fixed in 2.7.3 + Cato CTRL model-file RCE)
 - [x] 06 — AI gateway / LLM-proxy security *(delivered)* — LiteLLM vs Portkey vs Bifrost; fresh hook: the gateway became the attack surface in 2026 (LiteLLM PyPI supply-chain compromise + CVE-2026-42208 pre-auth SQLi on CISA KEV; Portkey open-sourced + PANW acquisition intent)
 - [x] 07 — Commercial AI firewalls *(delivered)* — pivoted to open-source self-hostable agent firewalls: Pipelock vs Meta LlamaFirewall vs Invariant Gateway; fresh hook: every commercial firewall this was going to feature (Lakera, Prompt Security, Protect AI Guardian) got acquired in 2025 and can't run on a no-egress lab, so the story is the OSS challengers defending the agent's outbound-traffic exfil boundary
+- [x] 08 — PII / secrets redaction before the model *(delivered)* — Presidio (now Data Privacy Stack) vs OpenAI Privacy Filter vs GLiNER2-PII vs LLM Guard's secrets lane; fresh hook: the redaction layer stopped being a regex problem in one quarter of 2026 (OpenAI open-weighted Privacy Filter 23 Apr; Fastino's GLiNER2-PII topped the SPY benchmark in May; Presidio left Microsoft and its images moved to ghcr.io) — measured not on benchmark F1 but on what actually reaches a stub model that logs every token it receives
 
 ## Notes for each build
 - Same fixed 7-criterion scorecard rubric (install 15%, detection/efficacy 30%, signal quality
@@ -39,8 +40,8 @@ lane once the catalog ages.
 
 ### A. Product-matchup themes (next up)
 - ~~Commercial AI firewalls~~ *(delivered as ep07 — pivoted to OSS self-hostable agent firewalls; the commercial ones all got acquired in 2025 and can't run on a no-egress lab)*
-- PII / secrets redaction before the model  ← **next up** (teased in ep07 outro)
-- Model provenance / signing / AI-SBOM
+- ~~PII / secrets redaction before the model~~ *(delivered as ep08 — Presidio vs OpenAI Privacy Filter vs GLiNER2-PII vs LLM Guard)*
+- Model provenance / signing / AI-SBOM  ← **next up** (teased in ep08 outro)
 - Jailbreak / injection classifier bake-off
 - Agent sandboxing / tool isolation
 - RAG / vector-DB poisoning: detection + defense

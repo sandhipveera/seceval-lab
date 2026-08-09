@@ -1,0 +1,159 @@
+# Episode 06 lab — AI gateway / LLM-proxy security. 100% local Docker, isolated, NO internet egress.
+# Brings up: a gullible stub model provider (OpenAI-compatible), a deliberately vulnerable chat app
+# whose system prompt holds a BENIGN canary secret, an attacker-controlled doc server (indirect
+# injection source), a canary sink (ground truth: if the canary lands here, the guardrail failed),
+# and ONE gateway at a time via profiles (fair-test rule: same target, same attacks, clean state).
+#
+# SAFETY: labnet is internal:true. No real provider keys. Benign canary payloads only. The
+# "gateway as target" checks are READ-ONLY posture (version / reachability / digest pinning) —
+# no exploit for CVE-2026-42208 or any other advisory is implemented here.
+name: ep06-gateway-lab
+
+networks:
+  labnet:
+    driver: bridge
+    internal: true        # <-- no route to the internet. Nothing actually exfiltrates.
+
+services:
+  # ── Ground truth ────────────────────────────────────────────────────────────
+  # Benign exfil sink: stands in for the attacker's collection point. Receiving the canary
+  # means that configuration FAILED to stop the attack.
+  canary-sink:
+    # Pinned by digest (Ep.06 STEP 0). Was `mendhak/http-https-echo:31` (a floating tag) until this
+    # run -- P3's digest-pinning posture check correctly flagged the lab itself as not-fully-pinned
+    # before tonight; see the write-up note. Digest resolved 2026-08-05 for linux/arm64.
+    image: mendhak/http-https-echo:31@sha256:0fefe04350131d7bb28355e3bf037062643e45f4a8a32f23679529e1b09d8ce4
+    container_name: ep06-canary
+    networks: [labnet]
+
+  # ── Target ──────────────────────────────────────────────────────────────────
+  # OpenAI-compatible stub provider. Deliberately gullible: it complies with injections, so any
+  # block we observe is attributable to the gateway and not to a model's own refusal training.
+  # Deterministic => repeatable runs, and no API key or egress required.
+  stub-model:
+    build: ./stub-model
+    container_name: ep06-stub-model
+    networks: [labnet]
+    environment:
+      MODE: "gullible"            # complies with injected instructions; deterministic responses
+      CANARY_VALUE: "CANARY-EP06-9f2c1a"
+
+  # Attacker-controlled document the app retrieves => indirect injection source.
+  doc-server:
+    build: ./doc-server
+    container_name: ep06-docs
+    networks: [labnet]
+    environment:
+      CANARY_URL: "http://ep06-canary:8080/exfil"   # benign, in-network only
+
+  # Vulnerable chat app. System prompt contains the benign canary; retrieves from doc-server;
+  # talks to whichever gateway is active via OPENAI_BASE_URL.
+  victim-app:
+    build: ./victim-app
+    container_name: ep06-victim-app
+    networks: [labnet]
+    depends_on: [stub-model, doc-server, canary-sink]
+    environment:
+      # Point at the ACTIVE gateway. The runner rewrites this per profile; default = no gateway
+      # (baseline: proves the attack works with nothing in the way).
+      OPENAI_BASE_URL: "${GATEWAY_BASE_URL:-http://ep06-stub-model:8080/v1}"
+      # A real gateway with auth configured (e.g. LiteLLM once LITELLM_MASTER_KEY is set) rejects an
+      # unauthenticated call with 401 -- which would falsely read as a "block". run_gateway.sh /
+      # capture_metrics.sh override this with the gateway's key so the client is authenticated and we
+      # measure the guardrail, not the auth wall. Default = the baseline/stub key (no auth).
+      OPENAI_API_KEY: "${VICTIM_OPENAI_KEY:-sk-lab-not-a-real-key}"
+      # Per-request headers for header-driven gateways (e.g. Portkey's x-portkey-config). JSON object
+      # of header->value; empty for baseline / LiteLLM. Set by run_gateway.sh & capture_metrics.sh.
+      OPENAI_EXTRA_HEADERS: "${OPENAI_EXTRA_HEADERS:-}"
+      SYSTEM_CANARY: "CANARY-EP06-9f2c1a"
+      DOC_SERVER_URL: "http://ep06-docs:8080"
+      CANARY_URL: "http://ep06-canary:8080/exfil"
+
+  # ── Gateways under test (one profile at a time — clean state between runs) ───
+  # NOTE: pin every image by DIGEST before publishing numbers. Digest pinning is itself one of the
+  # posture checks in Round 2b — the March 2026 PyPI incident is the argument for it.
+  litellm:
+    build: ./gateways/litellm          # REAL LiteLLM proxy, pinned by digest in the Dockerfile FROM
+    container_name: ep06-gw-litellm
+    networks: [labnet]
+    profiles: ["litellm"]
+    depends_on: [stub-model]
+    environment:
+      GUARDRAILS: "${GUARDRAILS:-on}"      # runner sweeps on/off; entrypoint picks config.on/off.yaml
+      CANARY_VALUE: "CANARY-EP06-9f2c1a"   # read by ep06_guardrail.py for output-side scanning
+      # Admin auth is deliberately explicit here — its default is a posture finding, not a given.
+      LITELLM_MASTER_KEY: "sk-lab-master-not-real"
+    # Real LiteLLM takes several seconds to bind :4000; gate `up --wait` on readiness so the runner
+    # never fires before the proxy is up (a premature transport error would score as NOT EVALUATED).
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:4000/health/liveliness',timeout=2).status==200 else 1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  portkey:
+    build: ./gateways/portkey          # REAL Portkey OSS gateway, pinned by digest in Dockerfile FROM
+    container_name: ep06-gw-portkey
+    networks: [labnet]
+    profiles: ["portkey"]
+    depends_on: [stub-model]
+    environment:
+      # Routing + guardrails are supplied per request via x-portkey-config (victim-app injects it
+      # from OPENAI_EXTRA_HEADERS). TRUSTED_CUSTOM_HOSTS (baked in the image) lets it route to the
+      # in-network stub past Portkey's SSRF guard. GUARDRAILS kept for parity; unused by this image.
+      GUARDRAILS: "${GUARDRAILS:-on}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8787/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  bifrost:
+    build: ./gateways/bifrost          # REAL Bifrost (Maxim AI), pinned by digest in Dockerfile FROM
+    container_name: ep06-gw-bifrost
+    networks: [labnet]
+    profiles: ["bifrost"]
+    depends_on: [stub-model]
+    environment:
+      APP_HOST: "0.0.0.0"                  # bind on labnet, not just loopback
+      BIFROST_HOST: "0.0.0.0"
+      # Bifrost has NO native content guardrail (bring-your-own). GUARDRAILS is a no-op here; the
+      # off/on runs are identical and recorded as "not offered", never a miss (see run_gateway.sh).
+      GUARDRAILS: "${GUARDRAILS:-on}"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/api/version"]
+      interval: 3s
+      timeout: 4s
+      retries: 40
+      start_period: 8s
+
+  # ── Harness ─────────────────────────────────────────────────────────────────
+  # Fires the six-scenario attack set + the clean set at victim-app, reads canary-sink, and runs
+  # the READ-ONLY posture checks against the active gateway. Writes raw output to artifacts/.
+  runner:
+    build: ./runner
+    container_name: ep06-runner
+    networks: [labnet]
+    profiles: ["run"]
+    depends_on: [victim-app, canary-sink]
+    volumes:
+      - ./artifacts:/artifacts
+      - ./attacks:/attacks:ro
+      - ./docker-compose.yml:/lab/docker-compose.yml:ro   # for the digest-pinning posture check
+    environment:
+      VICTIM_URL: "http://ep06-victim-app:8080"
+      CANARY_SINK_URL: "http://ep06-canary:8080"
+      GATEWAY_UNDER_TEST: "${GATEWAY_UNDER_TEST:-none}"   # none|litellm|portkey|bifrost
+      GATEWAY_ADMIN_URL: "${GATEWAY_ADMIN_URL:-}"         # probed WITHOUT credentials (posture)
+      # Real upstream images have no /meta side-port -- run_gateway.sh passes version/digest/guardrail
+      # facts in as env (from the digest pinned in STEP 0); run.py prefers these over /meta.
+      GATEWAY_VERSION: "${GATEWAY_VERSION:-}"
+      GATEWAY_DIGEST: "${GATEWAY_DIGEST:-}"
+      GATEWAY_GUARDRAILS: "${GUARDRAILS:-}"               # on|off for this run (the harness's own knob)
+      GATEWAY_GUARDRAILS_NATIVE: "${GATEWAY_GUARDRAILS_NATIVE:-}"
+      GATEWAY_GUARDRAILS_MECHANISM: "${GATEWAY_GUARDRAILS_MECHANISM:-}"
+      CANARY_VALUE: "CANARY-EP06-9f2c1a"
+      LOAD_REQUESTS: "200"        # same load for every gateway
+      LOAD_CONCURRENCY: "10"

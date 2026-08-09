@@ -1,0 +1,19 @@
+# Ep.06 lab — REAL LiteLLM Proxy config, GUARDRAILS=off variant (routing only, no guardrail).
+# ep06_entrypoint.sh selects this file when GUARDRAILS=off so the off/on pair isolates the cost and
+# effect of the PROTECTION, not of the proxy. Routes the victim-app's model to the local stub.
+model_list:
+  - model_name: stub-gullible-v1            # must match the model victim-app requests
+    litellm_params:
+      model: openai/stub-gullible-v1
+      api_base: http://ep06-stub-model:8080/v1
+      api_key: sk-lab-not-a-real-key         # stub ignores it; kept so the openai provider is happy
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+
+general_settings:
+  # Set (via compose) -> management routes require Authorization: Bearer <master_key>; that is what
+  # the P1 posture check measures. LiteLLM's default is NO master key (every route open), which is
+  # the real posture finding this episode argues about -- we set it explicitly and report that.
+  master_key: os.environ/LITELLM_MASTER_KEY

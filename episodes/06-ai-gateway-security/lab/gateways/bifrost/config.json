@@ -1,0 +1,8 @@
+{
+  "providers": {
+    "openai": {
+      "keys": [{"value": "sk-lab-not-a-real-key", "models": ["stub-gullible-v1"], "weight": 1}],
+      "network_config": {"base_url": "http://ep06-stub-model:8080", "allow_private_network": true}
+    }
+  }
+}
