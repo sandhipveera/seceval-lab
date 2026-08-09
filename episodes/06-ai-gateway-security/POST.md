@@ -2,8 +2,8 @@
 title: "My Guardrail Stopped 5 of 5 Attacks. It Also Refused 13 of 24 Legitimate Questions."
 description: "A reproducible, Docker-based head-to-head of three self-hostable AI gateways (LiteLLM, Portkey, Bifrost) on real upstream images. Five attacks and two clean sets through the gateway, plus a read-only posture pass on the gateway itself."
 tags: [AI security, AI gateway, LLM proxy, prompt injection, guardrails, false positives, supply chain, blue-team]
-status: draft
-note: "All numbers below come from artifacts/findings.csv, posture.csv and metrics.csv on real upstream images. Only the pinned commit hash is outstanding."
+status: ready
+note: "All numbers verified against lab/artifacts/{findings,posture,metrics}.csv and versions.json on real upstream images; scorecard arithmetic checked. External claims gated by claims.yaml (prepublish_check.py exits 0). Pinned at f079f5b."
 ---
 
 # My Guardrail Stopped 5 of 5 Attacks. It Also Refused 13 of 24 Legitimate Questions.
@@ -319,7 +319,7 @@ designed to hurt, and you have to run it on your own traffic before it means any
 ## Reproduce it yourself
 
 Every number above comes from the run, on real upstream images pinned by digest, reproducible from
-[the repo](https://github.com/sandhipveera/seceval-lab) at commit `[FILL]`. Benign by construction: the
+[the repo](https://github.com/sandhipveera/seceval-lab) at commit `f079f5b`. Benign by construction: the
 canary trips a sink on an isolated network, and the posture checks read versions and reachability
 rather than firing exploits.
 
